@@ -9,6 +9,6 @@ router.get('/', (req, res) => {
 });
 
 router.post('/dog-walker', dogWalkerController.store);
-router.get('/dog-walker/nearest', dogWalkerController.nearest);
+router.get('/dog-walker/nearest', dogWalkerController.nearests);
 
 export default router;

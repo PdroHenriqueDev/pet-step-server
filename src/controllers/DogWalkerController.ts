@@ -18,13 +18,13 @@ class DogWalker {
         return res.status(status).send(data);
     }
 
-    async nearest(req: Request, res: Response) {
+    async nearests(req: Request, res: Response) {
         const { latitude, longitude } = req.query;
         if (!latitude || !longitude) {
             return res.status(400).send({ error: 'Missing required query parameters' });
         }
 
-        const response = await dogWalkerRepository.findNearestDogWalker(
+        const response = await dogWalkerRepository.findNearestDogWalkers(
             parseFloat(latitude as string),
             parseFloat(longitude as string),
         );

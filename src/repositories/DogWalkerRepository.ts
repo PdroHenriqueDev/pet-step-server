@@ -31,7 +31,7 @@ class DogWalkerRepository {
         }
     }
 
-    async findNearestDogWalker(latitude: number, longitude: number, radiusInMeters: number = 10000) {  
+    async findNearestDogWalkers(latitude: number, longitude: number, radiusInMeters: number = 10000) {  
         try {
             const collection = this.db.collection('dogwalkers');
             
