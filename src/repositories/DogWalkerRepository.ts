@@ -1,4 +1,6 @@
+import { ObjectId } from 'mongodb';
 import MongoConnection from '../database/MongoConnection';
+import FirebaseRepository from './firebaseRepository';
 
 class DogWalkerRepository {
     get db() {
@@ -56,6 +58,56 @@ class DogWalkerRepository {
             }
         }      
     }
+
+    async findDogWalkerById(id: string) {
+        try {
+            const collection = this.db.collection('dogwalkers');
+            const dogWalker = await collection.findOne({ _id: new ObjectId(id) });
+
+            if (!dogWalker) {
+                return {
+                    status: 404,
+                    data: 'Dog walker not found',
+                };
+            } 
+
+            return {
+                status: 200,
+                data: dogWalker,
+            };
+        } catch (error) {
+            console.log('Error finding dog walker:', error);
+            return {
+                status: 500,
+                data: 'Error',
+            };
+        }
+    }
+
+    async sendNotificationDogWalker({ dogWalkerId, title, body }: { dogWalkerId: string; title: string; body: string; }) {
+        try {
+            const dogWalkerResult = await this.findDogWalkerById(dogWalkerId);
+
+            if (dogWalkerResult.status !== 200 || !dogWalkerResult.data) {
+                return {
+                    status: 404,
+                    error: 'Dog walker não encontrado'
+                }
+            }
+
+            const { token } = dogWalkerResult.data as any;
+        
+            const result = await FirebaseRepository.sendNotification({ title, body, token });
+
+            return {
+                status: 200,
+                data: result,
+            }
+
+        } catch(err) {
+            console.log('Got error =>', err)
+        }
+    }
 }
 
-export default DogWalkerRepository;
+export default new DogWalkerRepository();
