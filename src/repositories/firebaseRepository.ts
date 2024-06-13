@@ -13,6 +13,17 @@ class FirebaseRepository {
             body,
         },
         token,
+        android: {
+          priority: 'high',
+        },
+        apns: {
+          payload: {
+            aps: {
+              contentAvailable: true,
+              priority: 10,
+            }
+          }
+        }
     };
 
       try {
