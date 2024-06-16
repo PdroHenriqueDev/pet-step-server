@@ -61,6 +61,21 @@ class DogWalker {
 
         return res.status(status).send(data ?? error);
     }
+
+    async feedback(req: Request, res: Response) {
+        const { id } = req.params;
+
+        if (!id) return res.status(400).send({ error: 'Dog walker não encontrado' });
+
+        const { rate, comment } = req.body;
+
+        if (!rate) return res.status(400).send({ error: 'Requisição inválida' });
+
+        const response = await DogWalkerRepository.saveFeedback({ dogWalkerId: id, rate, comment });
+
+        const { status, data } = response;
+        return res.status(status).send(data);
+    }
 }
 
-export default DogWalker;
+export default new DogWalker();

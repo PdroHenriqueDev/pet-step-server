@@ -7,7 +7,12 @@ class DogWalkerRepository {
         return MongoConnection.getInstance().getdataBase();
     }
 
-    constructor() {
+    get dogWalkersCollection() {
+        return this.db.collection('dogwalkers');
+    }
+
+    get dogWalkerRateCollection() {
+        return this.db.collection('feedback');
     }
 
     async addDogWalker(walker: any) {
@@ -18,7 +23,15 @@ class DogWalkerRepository {
                 type: "Point",
                 coordinates: [walker.longitude, walker.latitude]
             };
-            const data = await collection.insertOne({ ...walker, location });
+
+            const newDogWalker = {
+                ...walker,
+                location,
+                rate: 5,
+                totalRatings: 0,
+            };
+
+            const data = await collection.insertOne(newDogWalker);
            
             return {
                 status: 201,
@@ -35,9 +48,7 @@ class DogWalkerRepository {
 
     async findNearestDogWalkers(latitude: number, longitude: number, radiusInMeters: number = 10000) {  
         try {
-            const collection = this.db.collection('dogwalkers');
-            
-            const nearestDogWalkers = await collection.find({
+            const nearestDogWalkers = await this.dogWalkersCollection.find({
                 location: {
                     $near: {
                         $geometry: { type: "Point", coordinates: [longitude, latitude] },
@@ -106,6 +117,47 @@ class DogWalkerRepository {
 
         } catch(err) {
             console.log('Got error =>', err)
+        }
+    }
+
+    async saveFeedback({ dogWalkerId, rate, comment }: { dogWalkerId: string; rate: string; comment: string; }) {
+        try {
+            const dogWalkerResult = await this.findDogWalkerById(dogWalkerId);
+
+            if (dogWalkerResult.status !== 200 || !dogWalkerResult.data) {
+                return {
+                    status: 404,
+                    error: 'Dog walker não encontrado'
+                }
+            }
+        
+            const feedbackResult = await this.dogWalkerRateCollection.insertOne({ walker_id: dogWalkerId, rate, comment });
+
+            const dogWalker = dogWalkerResult.data as any;
+            const newTotalRatings = dogWalker.totalRatings + 1;
+            const newRate = (dogWalker.rate * dogWalker.totalRatings + rate) as any / newTotalRatings;
+
+            await this.dogWalkersCollection.updateOne(
+                { _id: new ObjectId(dogWalkerId) },
+                {
+                    $set: {
+                        rate: newRate,
+                        totalRatings: newTotalRatings,
+                    }
+                }
+            );
+
+            return {
+                status: 200,
+                data: feedbackResult,
+            }
+
+        } catch(err) {
+            console.log('Got error =>', err);
+            return {
+                status: 500,
+                data: 'Error'
+            }
         }
     }
 }

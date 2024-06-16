@@ -2,16 +2,15 @@ import express from 'express';
 import DogWalker from './controllers/DogWalkerController';
 const router = express.Router();
 
-const dogWalkerController = new DogWalker();
-
 router.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
-router.get('/dog-walker/nearest', dogWalkerController.nearests);
-router.get('/dog-walker/:id', dogWalkerController.findById);
+router.get('/dog-walker/nearest', DogWalker.nearests);
+router.get('/dog-walker/:id', DogWalker.findById);
 
-router.post('/dog-walker/:id', dogWalkerController.notification);
-router.post('/dog-walker', dogWalkerController.store);
+router.post('/dog-walker/:id', DogWalker.notification);
+router.post('/dog-walker/:id/feedback', DogWalker.feedback);
+router.post('/dog-walker', DogWalker.store);
 
 export default router;
