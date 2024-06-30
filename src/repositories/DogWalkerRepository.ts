@@ -11,13 +11,12 @@ class DogWalkerRepository {
         return this.db.collection('dogwalkers');
     }
 
-    get dogWalkerRateCollection() {
+    get feedbackCollection() {
         return this.db.collection('feedback');
     }
 
     async addDogWalker(walker: any) {
         try {
-            const collection = this.db.collection('dogwalkers');
             // collection.createIndex({ location: "2dsphere" })
             const location = {
                 type: "Point",
@@ -31,7 +30,7 @@ class DogWalkerRepository {
                 totalRatings: 0,
             };
 
-            const data = await collection.insertOne(newDogWalker);
+            const data = await this.dogWalkersCollection.insertOne(newDogWalker);
            
             return {
                 status: 201,
@@ -131,7 +130,7 @@ class DogWalkerRepository {
                 }
             }
         
-            const feedbackResult = await this.dogWalkerRateCollection.insertOne({ walker_id: dogWalkerId, rate, comment });
+            const feedbackResult = await this.feedbackCollection.insertOne({ walker_id: dogWalkerId, rate, comment });
 
             const dogWalker = dogWalkerResult.data as any;
             const newTotalRatings = dogWalker.totalRatings + 1;
