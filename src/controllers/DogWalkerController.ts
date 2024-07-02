@@ -31,6 +31,21 @@ class DogWalker {
         return res.status(status).send(data);
     }
 
+    async recommed(req: Request, res: Response) {
+        const { latitude, longitude } = req.query;
+        if (!latitude || !longitude) {
+            return res.status(400).send({ error: 'Requisição inválida' });
+        }
+
+        const response = await DogWalkerRepository.findRecommedDogWalkers(
+            parseFloat(latitude as string),
+            parseFloat(longitude as string),
+        );
+
+        const { status, data } = response;
+        return res.status(status).send(data);
+    }
+
     async findById(req: Request, res: Response) {
         const { id } = req.params;
         if (!id) {

@@ -26,7 +26,7 @@ class DogWalkerRepository {
             const newDogWalker = {
                 ...walker,
                 location,
-                rate: 5,
+                rate: 4.4,
                 totalRatings: 0,
             };
 
@@ -54,6 +54,31 @@ class DogWalkerRepository {
                         $maxDistance: radiusInMeters,
                     }
                 }
+            }).toArray();
+   
+            return {
+                status: 200,
+                data: nearestDogWalkers,
+            }
+        } catch (error) {
+            console.log(error)
+            return {
+                status: 500,
+                data: 'Error'
+            }
+        }      
+    }
+
+    async findRecommedDogWalkers(latitude: number, longitude: number, radiusInMeters: number = 10000) {  
+        try {
+            const nearestDogWalkers = await this.dogWalkersCollection.find({
+                location: {
+                    $near: {
+                        $geometry: { type: "Point", coordinates: [longitude, latitude] },
+                        $maxDistance: radiusInMeters,
+                    }
+                },
+                rate: { $gte: 4.5 }
             }).toArray();
    
             return {
