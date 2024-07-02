@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import MongoConnection from '../database/MongoConnection';
+import MongoConnection from '../database/mongoConnection';
 import FirebaseRepository from './firebaseRepository';
 
 class DogWalkerRepository {

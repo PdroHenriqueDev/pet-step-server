@@ -4,7 +4,7 @@ import { Server } from "socket.io";
 import setupWebSocket from './websocket';
 import routes from './routes';
 import dotenv from 'dotenv';
-import MongoConnection from './database/MongoConnection';
+import MongoConnection from './database/mongoConnection';
 
 dotenv.config();
 

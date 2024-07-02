@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import DogWalkerRepository from '../repositories/DogWalkerRepository';
+import DogWalkerRepository from '../repositories/dogWalkerRepository';
 
 class DogWalker {
     async store(req: Request, res: Response) {

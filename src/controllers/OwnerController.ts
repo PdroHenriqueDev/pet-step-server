@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import OwnerRepository from '../repositories/OwnerRepository';
+import OwnerRepository from '../repositories/ownerRepository';
 
 class Owner {
     async store(req: Request, res: Response) {

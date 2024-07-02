@@ -1,5 +1,5 @@
 import express from 'express';
-import DogWalker from '../controllers/DogWalkerController';
+import DogWalker from '../controllers/dogWalkerController';
 
 const dogWalkerRouter = express.Router();
 
