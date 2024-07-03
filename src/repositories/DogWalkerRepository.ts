@@ -96,8 +96,7 @@ class DogWalkerRepository {
 
     async findDogWalkerById(id: string) {
         try {
-            const collection = this.db.collection('dogwalkers');
-            const dogWalker = await collection.findOne({ _id: new ObjectId(id) });
+            const dogWalker = await this.dogWalkersCollection.findOne({ _id: new ObjectId(id) });
 
             if (!dogWalker) {
                 return {

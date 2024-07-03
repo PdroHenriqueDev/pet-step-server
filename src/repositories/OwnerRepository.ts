@@ -39,6 +39,30 @@ class OwnerRepository {
             }
         }
     }
+
+    async findOwnerById(id: string) {
+        try {
+            const owner = await this.ownerCollection.findOne({ _id: new ObjectId(id) });
+
+            if (!owner) {
+                return {
+                    status: 404,
+                    data: 'Owner not found',
+                };
+            }
+
+            return {
+                status: 200,
+                data: owner,
+            };
+        } catch (error) {
+            console.log('Error finding owner:', error);
+            return {
+                status: 500,
+                data: 'Error',
+            };
+        }
+    }
 }
 
 export default new OwnerRepository();
