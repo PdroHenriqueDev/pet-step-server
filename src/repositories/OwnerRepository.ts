@@ -18,9 +18,15 @@ class OwnerRepository {
                 coordinates: [owner.longitude, owner.latitude]
             };
 
+            const dogsWithId = owner.dogs.map((dog: any) => ({
+                ...dog,
+                _id: new ObjectId(),
+            }));
+
             const newOwner = {
                 ...owner,
                 location,
+                dogs: dogsWithId,
                 rate: 5,
                 totalRatings: 0,
             };
