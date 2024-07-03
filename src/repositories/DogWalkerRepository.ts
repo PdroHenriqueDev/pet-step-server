@@ -26,8 +26,9 @@ class DogWalkerRepository {
             const newDogWalker = {
                 ...walker,
                 location,
-                rate: 4.4,
+                rate: 5,
                 totalRatings: 0,
+                isOnline: false,
             };
 
             const data = await this.dogWalkersCollection.insertOne(newDogWalker);
@@ -71,7 +72,7 @@ class DogWalkerRepository {
 
     async findRecommedDogWalkers(latitude: number, longitude: number, radiusInMeters: number = 10000) {  
         try {
-            const nearestDogWalkers = await this.dogWalkersCollection.find({
+            const recommedogWalkers = await this.dogWalkersCollection.find({
                 location: {
                     $near: {
                         $geometry: { type: "Point", coordinates: [longitude, latitude] },
@@ -83,7 +84,7 @@ class DogWalkerRepository {
    
             return {
                 status: 200,
-                data: nearestDogWalkers,
+                data: recommedogWalkers,
             }
         } catch (error) {
             console.log(error)
