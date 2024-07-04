@@ -19,6 +19,7 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "firebase-admin": "^12.1.1",
+    "geolib": "^3.3.4",
     "mongodb": "^6.7.0",
     "socket.io": "^4.7.5",
     "uuidv4": "^6.2.13"

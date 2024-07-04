@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
 import FirebaseRepository from './firebaseRepository';
-
+import { getDistance } from 'geolib';
 class DogWalkerRepository {
     get db() {
         return MongoConnection.getInstance().getdataBase();
@@ -56,10 +56,22 @@ class DogWalkerRepository {
                     }
                 }
             }).toArray();
+
+            const dogWalkersWithDistance = nearestDogWalkers.map(dogWalker => {
+                const distanceInMeters = getDistance(
+                    { latitude, longitude },
+                    { latitude: dogWalker.location.coordinates[1], longitude: dogWalker.location.coordinates[0] }
+                );
+                const distanceInKilometers = (distanceInMeters / 1000).toFixed(2);
+                return {
+                    ...dogWalker,
+                    distance: distanceInKilometers
+                };
+            });
    
             return {
                 status: 200,
-                data: nearestDogWalkers,
+                data: dogWalkersWithDistance,
             }
         } catch (error) {
             console.log(error)
@@ -72,7 +84,7 @@ class DogWalkerRepository {
 
     async findRecommedDogWalkers(latitude: number, longitude: number, radiusInMeters: number = 10000) {  
         try {
-            const recommedogWalkers = await this.dogWalkersCollection.find({
+            const recommedDogWalkers = await this.dogWalkersCollection.find({
                 location: {
                     $near: {
                         $geometry: { type: "Point", coordinates: [longitude, latitude] },
@@ -81,10 +93,22 @@ class DogWalkerRepository {
                 },
                 rate: { $gte: 4.5 }
             }).toArray();
+
+            const dogWalkersWithDistance = recommedDogWalkers.map(dogWalker => {
+                const distanceInMeters = getDistance(
+                    { latitude, longitude },
+                    { latitude: dogWalker.location.coordinates[1], longitude: dogWalker.location.coordinates[0] }
+                );
+                const distanceInKilometers = (distanceInMeters / 1000).toFixed(2);
+                return {
+                    ...dogWalker,
+                    distance: distanceInKilometers
+                };
+            });
    
             return {
                 status: 200,
-                data: recommedogWalkers,
+                data: dogWalkersWithDistance,
             }
         } catch (error) {
             console.log(error)
