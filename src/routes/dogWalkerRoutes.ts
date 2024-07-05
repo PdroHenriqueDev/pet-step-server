@@ -4,7 +4,7 @@ import DogWalker from '../controllers/dogWalkerController';
 const dogWalkerRouter = express.Router();
 
 dogWalkerRouter.get('/nearest', DogWalker.nearests);
-dogWalkerRouter.get('/recommed', DogWalker.recommed);
+dogWalkerRouter.get('/recommed', DogWalker.recommeded);
 dogWalkerRouter.get('/:id', DogWalker.findById);
 
 dogWalkerRouter.post('/:id', DogWalker.notification);

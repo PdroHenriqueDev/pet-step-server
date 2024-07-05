@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
 import FirebaseRepository from './firebaseRepository';
 import { getDistance } from 'geolib';
+import { DogWalker } from '../interfaces/dogWalker';
 class DogWalkerRepository {
     get db() {
         return MongoConnection.getInstance().getdataBase();
@@ -82,7 +83,7 @@ class DogWalkerRepository {
         }      
     }
 
-    async findRecommedDogWalkers(latitude: number, longitude: number, radiusInMeters: number = 10000) {  
+    async findRecommededDogWalkers(latitude: number, longitude: number, radiusInMeters: number = 10000) {  
         try {
             const recommedDogWalkers = await this.dogWalkersCollection.find({
                 location: {
@@ -100,10 +101,18 @@ class DogWalkerRepository {
                     { latitude: dogWalker.location.coordinates[1], longitude: dogWalker.location.coordinates[0] }
                 );
                 const distanceInKilometers = (distanceInMeters / 1000).toFixed(2);
+
                 return {
-                    ...dogWalker,
+                    ...dogWalker as unknown as DogWalker,
                     distance: distanceInKilometers
                 };
+            });
+
+            dogWalkersWithDistance.sort((a, b) => {
+                if (a.isOnline === b.isOnline) {
+                    return parseFloat(a.distance) - parseFloat(b.distance);
+                }
+                return a.isOnline ? -1 : 1;
             });
    
             return {
