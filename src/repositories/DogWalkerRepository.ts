@@ -55,7 +55,8 @@ class DogWalkerRepository {
                         $geometry: { type: "Point", coordinates: [longitude, latitude] },
                         $maxDistance: radiusInMeters,
                     }
-                }
+                },
+                isOnline: true,
             }).toArray();
 
             const dogWalkersWithDistance = nearestDogWalkers.map(dogWalker => {
