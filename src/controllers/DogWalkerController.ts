@@ -94,18 +94,19 @@ class DogWalker {
     }
 
     async calculateCost(req: Request, res: Response) {
+        const { numberOfDogs, walkDurationMinutes } = req.body;
+
+        if (!numberOfDogs || !walkDurationMinutes) {
+            return res.status(400).send({ message: !numberOfDogs ? 'Número de cachorros são obrigatórios' : 'Duração do passeio é obrigatório' });
+        }
+
+        if (numberOfDogs > 3) return res.status(400).send({ message: 'Somente é permitido até 3 dogs por passeio' });
+
         try {
-            const { numberOfDogs, walkDuration } = req.body;
-
-            if (!numberOfDogs || !walkDuration) {
-                res.status(400).send({ message: !numberOfDogs ? 'Número de cachorros são obrigatórios' : 'Duração do passeio é obrigatório' });
-                return;
-            }
-
-            const costDetails = calculateWalkCost({ numberOfDogs, walkDuration });
+            const costDetails = calculateWalkCost({ numberOfDogs, walkDurationMinutes });
             return res.status(200).send(costDetails);
-        } catch (error) {
-            return res.status(500).send({ message: 'Erro ao calcular o custo do passeio' });
+        } catch {
+            return res.status(500).send({ message: 'Error ao calcular o custo do passeio. Tente novamente mais tarde' });
         }
     }
 }

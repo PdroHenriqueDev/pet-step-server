@@ -1,29 +1,38 @@
-export const calculateWalkCost = ({numberOfDogs, walkDuration}: {numberOfDogs: number; walkDuration: number}) => {
-    const pricePerDog = 4.99;
-
-    const pricesForDuration: {[key: number]: number}  = {
-        15: 19.99,
-        30: 28.99,
-        60: 57.99,
-    }
-
-    if (!pricesForDuration.hasOwnProperty(walkDuration)) {
-        throw new Error(`Tempo de passeio inválido: ${walkDuration} minutos. Escolha entre 15, 30 ou 60 minutos.`)
-    }
-
-    const priceForTime =  pricesForDuration[walkDuration];
-    const totalCost = (numberOfDogs * pricePerDog) + priceForTime;
-    
-    return {
-        totalCost: totalCost.toFixed(2),
-        dogPrice: {
-            dogs: numberOfDogs,
-            price: pricePerDog,
-            totalDogCost: (numberOfDogs * pricePerDog).toFixed(2),
-        },
-        walkPrice: {
-            time: walkDuration,
-            price: priceForTime,
-        },
+export const calculateWalkCost = ({
+    numberOfDogs,
+    walkDurationMinutes,
+  }: {
+    numberOfDogs: number;
+    walkDurationMinutes: number;
+  }) => {
+    const DOG_PRICE_PER_DOG = 4.99;
+  
+    const WALK_DURATION_PRICES: { [key: number]: number } = {
+      15: 19.99,
+      30: 28.99,
+      60: 57.99,
     };
-};
+  
+    if (!WALK_DURATION_PRICES.hasOwnProperty(walkDurationMinutes)) {
+      throw new Error(
+        `Invalid walk duration: ${walkDurationMinutes} minutes. Choose between 15, 30, or 60 minutes.`
+      );
+    }
+  
+    const walkPrice = WALK_DURATION_PRICES[walkDurationMinutes];
+    const totalCost = (numberOfDogs * DOG_PRICE_PER_DOG) + walkPrice;
+  
+    return {
+      totalCost: totalCost.toFixed(2),
+      dogPrice: {
+        numberOfDogs,
+        pricePerDog: DOG_PRICE_PER_DOG,
+        totalDogCost: (numberOfDogs * DOG_PRICE_PER_DOG).toFixed(2),
+      },
+      walkPrice: {
+        durationMinutes: walkDurationMinutes,
+        price: walkPrice,
+      },
+    };
+  };
+  
