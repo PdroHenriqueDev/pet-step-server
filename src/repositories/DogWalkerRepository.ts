@@ -3,6 +3,7 @@ import MongoConnection from '../database/mongoConnection';
 import FirebaseRepository from './firebaseRepository';
 import { getDistance } from 'geolib';
 import { DogWalker } from '../interfaces/dogWalker';
+import { calculateWalkCost } from '../utils/calculateWalkCost';
 class DogWalkerRepository {
     get db() {
         return MongoConnection.getInstance().getdataBase();
@@ -14,6 +15,10 @@ class DogWalkerRepository {
 
     get feedbackCollection() {
         return this.db.collection('feedback');
+    }
+
+    get requestCollection() {
+        return this.db.collection('request');
     }
 
     async addDogWalker(walker: any) {
@@ -212,6 +217,49 @@ class DogWalkerRepository {
 
         } catch(err) {
             console.log('Got error =>', err);
+            return {
+                status: 500,
+                data: 'Error'
+            }
+        }
+    }
+
+    async calculateWalk({ dogWalkerId, numberOfDogs, walkDurationMinutes,  }: { dogWalkerId: string; numberOfDogs: number; walkDurationMinutes: number; }) {
+        try {
+            const dogWalkerResult = await this.findDogWalkerById(dogWalkerId);
+
+            if (dogWalkerResult.status !== 200 || !dogWalkerResult.data) {
+                return {
+                    status: 404,
+                    error: 'Dog walker não encontrado'
+                }
+            }
+
+            const costDetails = calculateWalkCost({ numberOfDogs, walkDurationMinutes });
+
+            const insertResult  = await this.requestCollection.insertOne({
+                dogWalkerId,
+                costDetails,
+            });
+
+            if (!insertResult.insertedId) {
+                return {
+                    status: 500,
+                    error: 'Algo de errado.'
+                }
+            }
+
+            const request = {
+                costDetails,
+                requestId: insertResult.insertedId
+            }
+
+            return {
+                status: 200,
+                data: request,
+            }
+
+        } catch(err) {
             return {
                 status: 500,
                 data: 'Error'

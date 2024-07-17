@@ -94,7 +94,7 @@ class DogWalker {
     }
 
     async calculateCost(req: Request, res: Response) {
-        const { numberOfDogs, walkDurationMinutes } = req.body;
+        const { dogWalkerId, numberOfDogs, walkDurationMinutes } = req.body;
 
         if (!numberOfDogs || !walkDurationMinutes) {
             return res.status(400).send({ message: !numberOfDogs ? 'Número de cachorros são obrigatórios' : 'Duração do passeio é obrigatório' });
@@ -102,12 +102,17 @@ class DogWalker {
 
         if (numberOfDogs > 3) return res.status(400).send({ message: 'Somente é permitido até 3 dogs por passeio' });
 
-        try {
-            const costDetails = calculateWalkCost({ numberOfDogs, walkDurationMinutes });
-            return res.status(200).send(costDetails);
-        } catch {
-            return res.status(500).send({ message: 'Error ao calcular o custo do passeio. Tente novamente mais tarde' });
+        if (numberOfDogs <= 0 || walkDurationMinutes <= 0) {
+            return {
+                status: 400,
+                error: numberOfDogs <= 0 ? 'Número de cachorros deve ser maiore que zero.' : 'Duração deve ser maior que zero.'
+            };
         }
+    
+        const response = await DogWalkerRepository.calculateWalk({ dogWalkerId, numberOfDogs, walkDurationMinutes });
+
+        const { status, data } = response;
+        return res.status(status).send(data);
     }
 }
 
