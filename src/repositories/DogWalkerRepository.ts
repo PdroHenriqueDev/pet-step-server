@@ -17,8 +17,8 @@ class DogWalkerRepository {
         return this.db.collection('feedback');
     }
 
-    get requestCollection() {
-        return this.db.collection('request');
+    get calculationRequestCollection() {
+        return this.db.collection('calculationRequest');
     }
 
     async addDogWalker(walker: any) {
@@ -237,7 +237,7 @@ class DogWalkerRepository {
 
             const costDetails = calculateWalkCost({ numberOfDogs, walkDurationMinutes });
 
-            const insertResult  = await this.requestCollection.insertOne({
+            const insertResult  = await this.calculationRequestCollection.insertOne({
                 dogWalkerId,
                 costDetails,
             });
@@ -269,7 +269,7 @@ class DogWalkerRepository {
 
     async request(requestId: string) {
         try {
-            const requestWalk = await this.requestCollection.findOne({ _id: new ObjectId(requestId) });
+            const requestWalk = await this.calculationRequestCollection.findOne({ _id: new ObjectId(requestId) });
 
             if (!requestWalk) {
                 return {
