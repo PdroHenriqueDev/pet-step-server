@@ -21,6 +21,8 @@ class DogWalkerRepository {
         return this.db.collection('calculationRequest');
     }
 
+    currentDate = new Date();
+
     async addDogWalker(walker: any) {
         try {
             // collection.createIndex({ location: "2dsphere" })
@@ -35,6 +37,8 @@ class DogWalkerRepository {
                 rate: 5,
                 totalRatings: 0,
                 isOnline: false,
+                createdAt: this.currentDate,
+                updatedAt: this.currentDate,
             };
 
             const data = await this.dogWalkersCollection.insertOne(newDogWalker);
@@ -240,6 +244,8 @@ class DogWalkerRepository {
             const insertResult  = await this.calculationRequestCollection.insertOne({
                 dogWalkerId,
                 costDetails,
+                createdAt: this.currentDate,
+                updatedAt: this.currentDate,
             });
 
             if (!insertResult.insertedId) {

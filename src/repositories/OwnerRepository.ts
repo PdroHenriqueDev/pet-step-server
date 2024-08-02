@@ -10,6 +10,8 @@ class OwnerRepository {
         return this.db.collection('owner');
     }
 
+    currentDate = new Date();
+
     async add(owner: any) {
         try {
 
@@ -29,6 +31,8 @@ class OwnerRepository {
                 dogs: dogsWithId,
                 rate: 5,
                 totalRatings: 0,
+                createdAt: this.currentDate,
+                updatedAt: this.currentDate,
             };
 
             const data = await this.ownerCollection.insertOne(newOwner);
