@@ -4,12 +4,12 @@ import { calculateWalkCost } from '../utils/calculateWalkCost';
 
 class DogWalker {
     async store(req: Request, res: Response) {
-        const { name, lastName, longitude, latitude } = req.body;
+        const { name, lastName, longitude, latitude, token } = req.body;
         if (!name || !longitude || !latitude) {
             return res.status(400).send({ error: 'Missing required fields' });
         }
 
-        const walker = { name, lastName, longitude, latitude };
+        const walker = { name, lastName, longitude, latitude, token };
 
         const response = await DogWalkerRepository.addDogWalker(walker);
         const { status, data } = response;
@@ -96,6 +96,8 @@ class DogWalker {
     async calculateCost(req: Request, res: Response) {
         const { dogWalkerId, numberOfDogs, walkDurationMinutes } = req.body;
 
+        if (!dogWalkerId) return res.status(400).send({ message: 'Requisição inválida'});
+
         if (!numberOfDogs || !walkDurationMinutes) {
             return res.status(400).send({ message: !numberOfDogs ? 'Número de cachorros são obrigatórios' : 'Duração do passeio é obrigatório' });
         }
@@ -114,6 +116,20 @@ class DogWalker {
         const { status, data } = response;
         return res.status(status).send(data);
     }
+
+    async requestWalk(req: Request, res: Response) {
+        const { requestId } = req.params;
+
+        if (!requestId) {
+            return res.status(400).send({ message: 'Requisição inválida' });
+        }
+    
+        const response = await DogWalkerRepository.request(requestId);
+
+        const { status, data } = response;
+        return res.status(status).send(data);
+    }
+
 }
 
 export default new DogWalker();

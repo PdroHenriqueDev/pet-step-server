@@ -34,7 +34,7 @@ class FirebaseRepository {
             data: response,
         };
       } catch (error) {
-        throw new Error('Erro ao enviar notificação: ' + error);
+        throw new Error(`Erro ao enviar notificação: ${error}`);
       }
     }
   }

@@ -141,7 +141,7 @@ class DogWalkerRepository {
             if (!dogWalker) {
                 return {
                     status: 404,
-                    data: 'Dog walker not found',
+                    data: 'Dog walker  não encontrado',
                 };
             } 
 
@@ -257,6 +257,31 @@ class DogWalkerRepository {
             return {
                 status: 200,
                 data: request,
+            }
+
+        } catch(err) {
+            return {
+                status: 500,
+                data: 'Error'
+            }
+        }
+    }
+
+    async request(requestId: string) {
+        try {
+            const requestWalk = await this.requestCollection.findOne({ _id: new ObjectId(requestId) });
+
+            if (!requestWalk) {
+                return {
+                    status: 404,
+                    data: 'Requisição inválida',
+                };
+            } 
+
+
+            return {
+                status: 200,
+                data: '',
             }
 
         } catch(err) {
