@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import DogWalkerRepository from '../repositories/dogWalkerRepository';
-import { calculateWalkCost } from '../utils/calculateWalkCost';
 
 class DogWalker {
     async store(req: Request, res: Response) {
