@@ -4,6 +4,13 @@ import OwnerRepository from '../repositories/ownerRepository';
 class Owner {
     async store(req: Request, res: Response) {
         const owner = req.body;
+
+        const { name, email } = owner;
+
+        if (!name || !email) {
+            return res.status(400).send({ error: 'Requisição inválida' });
+        }
+
         const response = await OwnerRepository.add(owner);
         const { status, data } = response;
 

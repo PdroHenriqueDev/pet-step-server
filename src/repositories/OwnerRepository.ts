@@ -1,5 +1,7 @@
 import { ObjectId } from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
+import StripeUtils from '../utils/stripe';
+
 
 class OwnerRepository {
     get db() {
@@ -20,6 +22,13 @@ class OwnerRepository {
                 coordinates: [owner.longitude, owner.latitude]
             };
 
+            const { email, name } = owner;
+
+            const customerStripe = await StripeUtils.createStripeCustomer({
+                email,
+                name,
+            });
+
             const dogsWithId = owner.dogs.map((dog: any) => ({
                 ...dog,
                 _id: new ObjectId(),
@@ -27,6 +36,7 @@ class OwnerRepository {
 
             const newOwner = {
                 ...owner,
+                customerStripe,
                 location,
                 dogs: dogsWithId,
                 rate: 5,

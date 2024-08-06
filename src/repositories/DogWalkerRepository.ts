@@ -368,10 +368,10 @@ class DogWalkerRepository {
                 };
             }
 
-            const { stripeCustumerId } = owner;
+            const { customerStripe } = owner;
 
             const paymentMethods = await this.stripe.paymentMethods.list({
-                customer: stripeCustumerId,
+                customer: customerStripe.id,
                 type: 'card',
             });
 
@@ -394,7 +394,7 @@ class DogWalkerRepository {
             const paymentIntent = await this.stripe.paymentIntents.create({
                 amount: valueInCents,
                 currency: 'brl',
-                customer: stripeCustumerId,
+                customer: customerStripe.id,
                 payment_method: paymentMethodId,
                 off_session: true,
                 confirm: true,
