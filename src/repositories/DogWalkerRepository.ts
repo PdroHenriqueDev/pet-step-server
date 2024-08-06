@@ -4,6 +4,10 @@ import FirebaseRepository from './firebaseRepository';
 import { getDistance } from 'geolib';
 import { DogWalker } from '../interfaces/dogWalker';
 import { calculateWalkCost } from '../utils/calculateWalkCost';
+import stripePackage from 'stripe';
+import setupWebSocket from '../websocket';
+import { SocketInit } from '../websocket/testClas';
+
 class DogWalkerRepository {
     get db() {
         return MongoConnection.getInstance().getdataBase();
@@ -19,6 +23,22 @@ class DogWalkerRepository {
 
     get calculationRequestCollection() {
         return this.db.collection('calculationRequest');
+    }
+
+    get requestRideCollection() {
+        return this.db.collection('requestRide');
+    }
+
+    get stripe() {
+        return new stripePackage(process.env?.STRIPE_SECRET_KEY ?? '');
+    }
+
+    get ownerCollection() {
+        return this.db.collection('owner');
+    }
+
+    get socket() {
+        return SocketInit.getInstance();
     }
 
     currentDate = new Date();
@@ -228,7 +248,7 @@ class DogWalkerRepository {
         }
     }
 
-    async calculateWalk({ dogWalkerId, numberOfDogs, walkDurationMinutes,  }: { dogWalkerId: string; numberOfDogs: number; walkDurationMinutes: number; }) {
+    async calculateWalk({ dogWalkerId, numberOfDogs, walkDurationMinutes, ownerId }: { ownerId: string; dogWalkerId: string; numberOfDogs: number; walkDurationMinutes: number; }) {
         try {
             const dogWalkerResult = await this.findDogWalkerById(dogWalkerId);
 
@@ -242,6 +262,7 @@ class DogWalkerRepository {
             const costDetails = calculateWalkCost({ numberOfDogs, walkDurationMinutes });
 
             const insertResult  = await this.calculationRequestCollection.insertOne({
+                ownerId,
                 dogWalkerId,
                 costDetails,
                 createdAt: this.currentDate,
@@ -273,28 +294,133 @@ class DogWalkerRepository {
         }
     }
 
-    async request(requestId: string) {
+    async requestRide(calculationId: string) {
         try {
-            const requestWalk = await this.calculationRequestCollection.findOne({ _id: new ObjectId(requestId) });
+            const calculation = await this.calculationRequestCollection.findOne({ _id: new ObjectId(calculationId) });
 
-            if (!requestWalk) {
+            if (!calculation) {
                 return {
                     status: 404,
                     data: 'Requisição inválida',
                 };
-            } 
+            }
 
+            const { dogWalkerId } = calculation;
+            const dogWalkerResult = await this.findDogWalkerById(dogWalkerId);
+
+            if (dogWalkerResult.status !== 200 || !dogWalkerResult.data) {
+                return {
+                    status: 404,
+                    error: 'Dog walker não encontrado'
+                }
+            }
+
+            const requestRideCollection = await this.requestRideCollection.insertOne({
+                calculation,
+                createdAt: this.currentDate,
+                updatedAt: this.currentDate,
+            });
+
+            const { token } = dogWalkerResult.data as any;
+            const result = await FirebaseRepository.sendNotification({ title: 'Passeio', body: 'Aceita o passeio?', token });
+
+            if (result.status !== 200) {
+                return {
+                    status: 500,
+                    error: 'Algo de errado. Tente novamente mais tarde.'
+                }
+            }
 
             return {
                 status: 200,
-                data: '',
+                data: requestRideCollection,
             }
 
         } catch(err) {
+            console.log(`Error: ${err}`);
             return {
                 status: 500,
-                data: 'Error'
+                data: 'Algo de errado.'
             }
+        }
+    }
+
+    async acceptRide(requestId: string) {
+        try {
+            const requestRide = await this.requestRideCollection.findOne({ _id: new ObjectId(requestId) });
+
+            if (!requestRide) {
+                return {
+                    status: 404,
+                    data: 'Requisição inválida',
+                };
+            }
+
+            const { calculation } = requestRide;
+            const { ownerId, costDetails } = calculation;
+
+            const owner = await this.ownerCollection.findOne({ _id: new ObjectId(ownerId as string) });
+
+            if (!owner) {
+                return {
+                    status: 404,
+                    data: 'Requisição inválida',
+                };
+            }
+
+            const { stripeCustumerId } = owner;
+
+            const paymentMethods = await this.stripe.paymentMethods.list({
+                customer: stripeCustumerId,
+                type: 'card',
+            });
+
+            const { data } = paymentMethods;
+
+            
+
+            if (!data || data.length === 0) {
+                this.socket.publishEventToRoom(requestId, 'message', 'deu ruim');
+                return {
+                    status: 400,
+                    data: 'Falha no pagamento',
+                };
+            }
+
+            const { totalCost } = costDetails;
+            const paymentMethodId = data[0].id as string;
+
+            const valueInCents = Math.round(totalCost * 100);
+            const paymentIntent = await this.stripe.paymentIntents.create({
+                amount: valueInCents,
+                currency: 'brl',
+                customer: stripeCustumerId,
+                payment_method: paymentMethodId,
+                off_session: true,
+                confirm: true,
+            });
+
+            if (paymentIntent.status !== 'succeeded' && paymentIntent.status !== 'processing') {
+                this.socket.publishEventToRoom(requestId, 'message', 'deu ruim');
+                return {
+                    status: 400,
+                    data: 'Falha no pagamento',
+                };
+            }
+
+            this.socket.publishEventToRoom(requestId, 'message', 'deu bom');
+
+            return {
+                status: 200,
+                data: 'Requisição aceita',
+            };
+        } catch (error) {
+            console.error('Error accepting ride:', error);
+            this.socket.publishEventToRoom(requestId, 'message', 'deu ruim');
+            return {
+                status: 500,
+                data: 'Erro interno do servidor',
+            };
         }
     }
 }

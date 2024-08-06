@@ -5,6 +5,7 @@ import setupWebSocket from './websocket';
 import routes from './routes';
 import dotenv from 'dotenv';
 import MongoConnection from './database/mongoConnection';
+import { SocketInit } from './websocket/testClas';
 
 dotenv.config();
 
@@ -20,7 +21,8 @@ const port = 3000;
 
 app.use('/', routes);
 
-setupWebSocket(io);
+// setupWebSocket(io);
+new  SocketInit(io);
 
 (async () => {
   try {

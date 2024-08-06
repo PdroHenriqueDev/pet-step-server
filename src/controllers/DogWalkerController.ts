@@ -93,9 +93,9 @@ class DogWalker {
     }
 
     async calculateCost(req: Request, res: Response) {
-        const { dogWalkerId, numberOfDogs, walkDurationMinutes } = req.body;
+        const { dogWalkerId, numberOfDogs, walkDurationMinutes, ownerId } = req.body;
 
-        if (!dogWalkerId) return res.status(400).send({ message: 'Requisição inválida'});
+        if (!dogWalkerId || !ownerId) return res.status(400).send({ message: 'Requisição inválida'});
 
         if (!numberOfDogs || !walkDurationMinutes) {
             return res.status(400).send({ message: !numberOfDogs ? 'Número de cachorros são obrigatórios' : 'Duração do passeio é obrigatório' });
@@ -110,25 +110,37 @@ class DogWalker {
             };
         }
     
-        const response = await DogWalkerRepository.calculateWalk({ dogWalkerId, numberOfDogs, walkDurationMinutes });
+        const response = await DogWalkerRepository.calculateWalk({ ownerId, dogWalkerId, numberOfDogs, walkDurationMinutes });
 
         const { status, data } = response;
         return res.status(status).send(data);
     }
 
     async requestWalk(req: Request, res: Response) {
+        const { calculationId } = req.params;
+
+        if (!calculationId) {
+            return res.status(400).send({ message: 'Requisição inválida' });
+        }
+    
+        const response = await DogWalkerRepository.requestRide(calculationId);
+
+        const { status, data } = response;
+        return res.status(status).send(data);
+    }
+
+    async acceptRide(req: Request, res: Response) {
         const { requestId } = req.params;
 
         if (!requestId) {
             return res.status(400).send({ message: 'Requisição inválida' });
         }
     
-        const response = await DogWalkerRepository.request(requestId);
+        const response = await DogWalkerRepository.acceptRide(requestId);
 
         const { status, data } = response;
         return res.status(status).send(data);
     }
-
 }
 
 export default new DogWalker();
