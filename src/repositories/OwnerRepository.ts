@@ -16,13 +16,21 @@ class OwnerRepository {
 
     async add(owner: any) {
         try {
+            const { email, name } = owner;
+
+            const ownerExists = await this.ownerCollection.findOne({ email, });
+
+            if (ownerExists) {
+                return {
+                    status: 201,
+                    data: 'Usuário já cadastrado',
+                }
+            }
 
             const location = {
                 type: "Point",
                 coordinates: [owner.longitude, owner.latitude]
             };
-
-            const { email, name } = owner;
 
             const customerStripe = await StripeUtils.createStripeCustomer({
                 email,

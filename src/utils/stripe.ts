@@ -21,6 +21,16 @@ class StripUtils {
 
         return custumer;
     }
+
+    async setupIntent(customerId: string) {
+        const setupIntent = await this.stripe.setupIntents.create({
+            customer: customerId,
+        });
+
+        return {
+            setupIntentClientSecret: setupIntent.client_secret,
+        }
+    }
 } 
 
 export default new StripUtils();
