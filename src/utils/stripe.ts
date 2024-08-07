@@ -31,6 +31,14 @@ class StripUtils {
             setupIntentClientSecret: setupIntent.client_secret,
         }
     }
+    
+    async listPayments(customerId: string) {
+        const paymentMethods = await this.stripe.customers.listPaymentMethods(customerId);
+
+        const { data } = paymentMethods;
+
+        return data;
+    }
 } 
 
 export default new StripUtils();

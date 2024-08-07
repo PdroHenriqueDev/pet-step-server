@@ -23,6 +23,28 @@ class StripeController {
             }
         }        
     }
+
+    async listCustomerPayments(req: Request, res: Response) {
+        const { customerId } = req.params;
+        if (!customerId) return res.status(400).send('Requisição inválida');
+        try {
+            const list = await StripeUtils.listPayments(customerId);
+
+            const response = {
+                status: 200,
+                data: list,
+            }
+
+            const { status, data } = response;
+
+            return res.status(status).send(data);
+        } catch {
+            return {
+                status: 500,
+                data: 'Error'
+            }
+        }  
+    }
 }
 
 export default new StripeController();
