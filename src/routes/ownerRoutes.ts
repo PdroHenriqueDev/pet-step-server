@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.post('/', Owner.store);
 
+router.get('/payments/:id', Owner.payments);
 router.get('/:id', Owner.findById);
 
 export default router;

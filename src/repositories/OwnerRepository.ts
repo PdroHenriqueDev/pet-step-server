@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
 import StripeUtils from '../utils/stripe';
+import { Owner } from '../interfaces/owner';
 
 
 class OwnerRepository {
@@ -70,12 +71,12 @@ class OwnerRepository {
 
     async findOwnerById(id: string) {
         try {
-            const owner = await this.ownerCollection.findOne({ _id: new ObjectId(id) });
+            const owner = await this.ownerCollection.findOne<Owner>({ _id: new ObjectId(id) });
 
             if (!owner) {
                 return {
                     status: 404,
-                    data: 'Owner not found',
+                    data: 'Usuário não existe',
                 };
             }
 
@@ -87,7 +88,63 @@ class OwnerRepository {
             console.log('Error finding owner:', error);
             return {
                 status: 500,
-                data: 'Error',
+                data:{
+                    message: 'Error'
+                },
+            };
+        }
+    }
+
+    async listPayments(id: string) {
+        try {
+            const owner = await this.ownerCollection.findOne<Owner>({ _id: new ObjectId(id) });
+
+            if (!owner) {
+                return {
+                    status: 404,
+                    data: 'Usuário não existe',
+                };
+            }
+
+            const { customerStripe, defaultPayment } = owner;
+
+            const paymentMethods = await StripeUtils.listPayments(customerStripe.id);
+
+            const methods = paymentMethods.map(({id, card, type}) => {
+                const {
+                    brand, 
+                    exp_month, 
+                    exp_year, 
+                    last4, 
+                    funding,
+                } = card ?? {};
+
+                const isSelected = defaultPayment === id;
+
+                return {
+                    id,
+                    type,
+                    isSelected,
+                    card: {
+                        brand, 
+                        exp_month, 
+                        exp_year, 
+                        last4, 
+                        funding,
+                    }
+                }
+            })
+
+            return {
+                status: 200,
+                data: methods,
+            }
+        } catch {
+            return {
+                status: 500,
+                data:{
+                    message: 'Error'
+                },
             };
         }
     }

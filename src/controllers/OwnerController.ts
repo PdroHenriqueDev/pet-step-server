@@ -28,6 +28,18 @@ class Owner {
         const { status, data } = response;
         return res.status(status).send(data);
     }
+
+    async payments(req: Request, res: Response) {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).send({ error: 'Dog walker não encontrado' });
+        }
+
+        const response = await OwnerRepository.listPayments(id);
+
+        const { status, data } = response;
+        return res.status(status).send(data);
+    }
 }
 
 export default new Owner();
