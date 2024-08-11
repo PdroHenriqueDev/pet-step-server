@@ -398,6 +398,7 @@ class DogWalkerRepository {
                 payment_method: paymentMethodId,
                 off_session: true,
                 confirm: true,
+                description: requestId,
             });
 
             if (paymentIntent.status !== 'succeeded' && paymentIntent.status !== 'processing') {
