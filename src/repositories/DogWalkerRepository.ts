@@ -368,34 +368,16 @@ class DogWalkerRepository {
                 };
             }
 
-            const { customerStripe } = owner;
-
-            const paymentMethods = await this.stripe.paymentMethods.list({
-                customer: customerStripe.id,
-                type: 'card',
-            });
-
-            const { data } = paymentMethods;
-
-            
-
-            if (!data || data.length === 0) {
-                this.socket.publishEventToRoom(requestId, 'message', 'deu ruim');
-                return {
-                    status: 400,
-                    data: 'Falha no pagamento',
-                };
-            }
+            const { customerStripe, defaultPayment } = owner;
 
             const { totalCost } = costDetails;
-            const paymentMethodId = data[0].id as string;
 
             const valueInCents = Math.round(totalCost * 100);
             const paymentIntent = await this.stripe.paymentIntents.create({
                 amount: valueInCents,
                 currency: 'brl',
                 customer: customerStripe.id,
-                payment_method: paymentMethodId,
+                payment_method: defaultPayment,
                 off_session: true,
                 confirm: true,
                 description: requestId,
