@@ -5,9 +5,9 @@ import { getDistance } from 'geolib';
 import { DogWalker } from '../interfaces/dogWalker';
 import { calculateWalkCost } from '../utils/calculateWalkCost';
 import stripePackage from 'stripe';
-import setupWebSocket from '../websocket';
 import { SocketInit } from '../websocket/testClas';
 import { Location } from '../interfaces/location';
+import { RideEvents } from '../enums/ride';
 
 class DogWalkerRepository {
     get db() {
@@ -353,6 +353,7 @@ class DogWalkerRepository {
             const requestRide = await this.requestRideCollection.findOne({ _id: new ObjectId(requestId) });
 
             if (!requestRide) {
+                this.socket.publishEventToRoom(requestId, RideEvents.INVALID_REQUEST, 'Requisição inválida');
                 return {
                     status: 404,
                     data: 'Requisição inválida',
@@ -365,6 +366,7 @@ class DogWalkerRepository {
             const owner = await this.ownerCollection.findOne({ _id: new ObjectId(ownerId as string) });
 
             if (!owner) {
+                this.socket.publishEventToRoom(requestId, RideEvents.INVALID_REQUEST, 'Requisição inválida');
                 return {
                     status: 404,
                     data: 'Requisição inválida',
@@ -387,22 +389,22 @@ class DogWalkerRepository {
             });
 
             if (paymentIntent.status !== 'succeeded' && paymentIntent.status !== 'processing') {
-                this.socket.publishEventToRoom(requestId, 'message', 'deu ruim');
+                this.socket.publishEventToRoom(requestId, RideEvents.PAYMENT_FAILURE, 'Falha no pagamento');
                 return {
                     status: 400,
                     data: 'Falha no pagamento',
                 };
             }
 
-            this.socket.publishEventToRoom(requestId, 'message', 'deu bom');
+            this.socket.publishEventToRoom(requestId, RideEvents.PAYMENT_SUCCESS, 'Pagamento bem-sucedido');
 
             return {
                 status: 200,
-                data: 'Requisição aceita',
+                data: requestId,
             };
         } catch (error) {
-            console.error('Error accepting ride:', error);
-            this.socket.publishEventToRoom(requestId, 'message', 'deu ruim');
+            console.error('Error aceitando o passeio:', error);
+            this.socket.publishEventToRoom(requestId, RideEvents.SERVER_ERROR, 'Erro interno do servidor');
             return {
                 status: 500,
                 data: 'Erro interno do servidor',
