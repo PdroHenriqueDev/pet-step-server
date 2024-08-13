@@ -7,6 +7,7 @@ import { calculateWalkCost } from '../utils/calculateWalkCost';
 import stripePackage from 'stripe';
 import setupWebSocket from '../websocket';
 import { SocketInit } from '../websocket/testClas';
+import { Location } from '../interfaces/location';
 
 class DogWalkerRepository {
     get db() {
@@ -248,7 +249,7 @@ class DogWalkerRepository {
         }
     }
 
-    async calculateWalk({ dogWalkerId, numberOfDogs, walkDurationMinutes, ownerId }: { ownerId: string; dogWalkerId: string; numberOfDogs: number; walkDurationMinutes: number; }) {
+    async calculateWalk({ dogWalkerId, numberOfDogs, walkDurationMinutes, ownerId, receivedLocation }: { ownerId: string; dogWalkerId: string; numberOfDogs: number; walkDurationMinutes: number; receivedLocation: Location }) {
         try {
             const dogWalkerResult = await this.findDogWalkerById(dogWalkerId);
 
@@ -265,6 +266,7 @@ class DogWalkerRepository {
                 ownerId,
                 dogWalkerId,
                 costDetails,
+                receivedLocation,
                 createdAt: this.currentDate,
                 updatedAt: this.currentDate,
             });
@@ -278,6 +280,7 @@ class DogWalkerRepository {
 
             const request = {
                 costDetails,
+                receivedLocation,
                 requestId: insertResult.insertedId
             }
 

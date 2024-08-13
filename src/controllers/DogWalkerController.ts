@@ -93,7 +93,7 @@ class DogWalker {
     }
 
     async calculateCost(req: Request, res: Response) {
-        const { dogWalkerId, numberOfDogs, walkDurationMinutes, ownerId } = req.body;
+        const { dogWalkerId, numberOfDogs, walkDurationMinutes, ownerId, receivedLocation } = req.body;
 
         if (!dogWalkerId || !ownerId) return res.status(400).send({ message: 'Requisição inválida'});
 
@@ -110,7 +110,7 @@ class DogWalker {
             };
         }
     
-        const response = await DogWalkerRepository.calculateWalk({ ownerId, dogWalkerId, numberOfDogs, walkDurationMinutes });
+        const response = await DogWalkerRepository.calculateWalk({ ownerId, dogWalkerId, numberOfDogs, walkDurationMinutes, receivedLocation });
 
         const { status, data } = response;
         return res.status(status).send(data);
