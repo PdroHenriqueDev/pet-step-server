@@ -398,9 +398,13 @@ class DogWalkerRepository {
         };
       }
 
+      const response = {
+        requestId: requestRideCollection.insertedId,
+      };
+
       return {
         status: 200,
-        data: requestRideCollection,
+        data: response,
       };
     } catch (err) {
       console.log(`Error: ${err}`);
