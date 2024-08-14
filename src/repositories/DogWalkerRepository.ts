@@ -340,7 +340,7 @@ class DogWalkerRepository {
       const request = {
         costDetails,
         receivedLocation,
-        requestId: insertResult.insertedId,
+        calculationId: insertResult.insertedId,
       };
 
       return {
