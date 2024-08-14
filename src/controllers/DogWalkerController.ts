@@ -2,145 +2,177 @@ import { Request, Response } from 'express';
 import DogWalkerRepository from '../repositories/dogWalkerRepository';
 
 class DogWalker {
-    async store(req: Request, res: Response) {
-        const { name, lastName, longitude, latitude, token } = req.body;
-        if (!name || !longitude || !latitude) {
-            return res.status(400).send({ error: 'Missing required fields' });
-        }
-
-        const walker = { name, lastName, longitude, latitude, token };
-
-        const response = await DogWalkerRepository.addDogWalker(walker);
-        const { status, data } = response;
-
-        return res.status(status).send(data);
+  async store(req: Request, res: Response) {
+    const { name, lastName, longitude, latitude, token } = req.body;
+    if (!name || !longitude || !latitude) {
+      return res.status(400).send({ error: 'Missing required fields' });
     }
 
-    async nearests(req: Request, res: Response) {
-        const { latitude, longitude } = req.query;
-        if (!latitude || !longitude) {
-            return res.status(400).send({ error: 'Requisição inválida' });
-        }
+    const walker = { name, lastName, longitude, latitude, token };
 
-        const response = await DogWalkerRepository.findNearestDogWalkers(
-            parseFloat(latitude as string),
-            parseFloat(longitude as string),
-        );
+    const response = await DogWalkerRepository.addDogWalker(walker);
+    const { status, data } = response;
 
-        const { status, data } = response;
-        return res.status(status).send(data);
+    return res.status(status).send(data);
+  }
+
+  async nearests(req: Request, res: Response) {
+    const { latitude, longitude } = req.query;
+    if (!latitude || !longitude) {
+      return res.status(400).send({ error: 'Requisição inválida' });
     }
 
-    async recommeded(req: Request, res: Response) {
-        const { latitude, longitude } = req.query;
-        if (!latitude || !longitude) {
-            return res.status(400).send({ error: 'Requisição inválida' });
-        }
+    const response = await DogWalkerRepository.findNearestDogWalkers(
+      parseFloat(latitude as string),
+      parseFloat(longitude as string)
+    );
 
-        const response = await DogWalkerRepository.findRecommededDogWalkers(
-            parseFloat(latitude as string),
-            parseFloat(longitude as string),
-        );
+    const { status, data } = response;
+    return res.status(status).send(data);
+  }
 
-        const { status, data } = response;
-        return res.status(status).send(data);
+  async recommeded(req: Request, res: Response) {
+    const { latitude, longitude } = req.query;
+    if (!latitude || !longitude) {
+      return res.status(400).send({ error: 'Requisição inválida' });
     }
 
-    async findById(req: Request, res: Response) {
-        const { id } = req.params;
-        if (!id) {
-            return res.status(400).send({ error: 'Dog walker não encontrado' });
-        }
+    const response = await DogWalkerRepository.findRecommededDogWalkers(
+      parseFloat(latitude as string),
+      parseFloat(longitude as string)
+    );
 
-        const response = await DogWalkerRepository.findDogWalkerById(id);
+    const { status, data } = response;
+    return res.status(status).send(data);
+  }
 
-        const { status, data } = response;
-        return res.status(status).send(data);
+  async findById(req: Request, res: Response) {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).send({ error: 'Dog walker não encontrado' });
     }
 
-    async notification(req: Request, res: Response) {
-        const { id } = req.params;
-        const { title, body } = req.body;
+    const response = await DogWalkerRepository.findDogWalkerById(id);
 
-        if (!id) {
-            return res.status(400).send({ error: 'Dog walker não encontrado' });
-        }
+    const { status, data } = response;
+    return res.status(status).send(data);
+  }
 
-        if (!title || !body) {
-            return res.status(400).send({ error: 'Requisição inválida' });
-        }
+  async notification(req: Request, res: Response) {
+    const { id } = req.params;
+    const { title, body } = req.body;
 
-        const response = await DogWalkerRepository.sendNotificationDogWalker({ dogWalkerId: id, title, body });
-        
-        const { status, data, error } = response as any;
-
-        return res.status(status).send(data ?? error);
+    if (!id) {
+      return res.status(400).send({ error: 'Dog walker não encontrado' });
     }
 
-    async feedback(req: Request, res: Response) {
-        const { id } = req.params;
-
-        if (!id) return res.status(400).send({ error: 'Dog walker não encontrado' });
-
-        const { rate, comment } = req.body;
-
-        if (!rate) return res.status(400).send({ error: 'Requisição inválida' });
-
-        const response = await DogWalkerRepository.saveFeedback({ dogWalkerId: id, rate, comment });
-
-        const { status, data } = response;
-        return res.status(status).send(data);
+    if (!title || !body) {
+      return res.status(400).send({ error: 'Requisição inválida' });
     }
 
-    async calculateCost(req: Request, res: Response) {
-        const { dogWalkerId, numberOfDogs, walkDurationMinutes, ownerId, receivedLocation } = req.body;
+    const response = await DogWalkerRepository.sendNotificationDogWalker({
+      dogWalkerId: id,
+      title,
+      body,
+    });
 
-        if (!dogWalkerId || !ownerId) return res.status(400).send({ message: 'Requisição inválida'});
+    const { status, data, error } = response as any;
 
-        if (!numberOfDogs || !walkDurationMinutes) {
-            return res.status(400).send({ message: !numberOfDogs ? 'Número de cachorros são obrigatórios' : 'Duração do passeio é obrigatório' });
-        }
+    return res.status(status).send(data ?? error);
+  }
 
-        if (numberOfDogs > 3) return res.status(400).send({ message: 'Somente é permitido até 3 dogs por passeio' });
+  async feedback(req: Request, res: Response) {
+    const { id } = req.params;
 
-        if (numberOfDogs <= 0 || walkDurationMinutes <= 0) {
-            return {
-                status: 400,
-                error: numberOfDogs <= 0 ? 'Número de cachorros deve ser maiore que zero.' : 'Duração deve ser maior que zero.'
-            };
-        }
-    
-        const response = await DogWalkerRepository.calculateWalk({ ownerId, dogWalkerId, numberOfDogs, walkDurationMinutes, receivedLocation });
+    if (!id)
+      return res.status(400).send({ error: 'Dog walker não encontrado' });
 
-        const { status, data } = response;
-        return res.status(status).send(data);
+    const { rate, comment } = req.body;
+
+    if (!rate) return res.status(400).send({ error: 'Requisição inválida' });
+
+    const response = await DogWalkerRepository.saveFeedback({
+      dogWalkerId: id,
+      rate,
+      comment,
+    });
+
+    const { status, data } = response;
+    return res.status(status).send(data);
+  }
+
+  async calculateCost(req: Request, res: Response) {
+    const {
+      dogWalkerId,
+      numberOfDogs,
+      walkDurationMinutes,
+      ownerId,
+      receivedLocation,
+    } = req.body;
+
+    if (!dogWalkerId || !ownerId)
+      return res.status(400).send({ message: 'Requisição inválida' });
+
+    if (!numberOfDogs || !walkDurationMinutes) {
+      return res.status(400).send({
+        message: !numberOfDogs
+          ? 'Número de cachorros são obrigatórios'
+          : 'Duração do passeio é obrigatório',
+      });
     }
 
-    async requestWalk(req: Request, res: Response) {
-        const { calculationId } = req.params;
+    if (numberOfDogs > 3)
+      return res
+        .status(400)
+        .send({ message: 'Somente é permitido até 3 dogs por passeio' });
 
-        if (!calculationId) {
-            return res.status(400).send({ message: 'Requisição inválida' });
-        }
-    
-        const response = await DogWalkerRepository.requestRide(calculationId);
-
-        const { status, data } = response;
-        return res.status(status).send(data);
+    if (numberOfDogs <= 0 || walkDurationMinutes <= 0) {
+      return {
+        status: 400,
+        error:
+          numberOfDogs <= 0
+            ? 'Número de cachorros deve ser maiore que zero.'
+            : 'Duração deve ser maior que zero.',
+      };
     }
 
-    async acceptRide(req: Request, res: Response) {
-        const { requestId } = req.params;
+    const response = await DogWalkerRepository.calculateWalk({
+      ownerId,
+      dogWalkerId,
+      numberOfDogs,
+      walkDurationMinutes,
+      receivedLocation,
+    });
 
-        if (!requestId) {
-            return res.status(400).send({ message: 'Requisição inválida' });
-        }
-    
-        const response = await DogWalkerRepository.acceptRide(requestId);
+    const { status, data } = response;
+    return res.status(status).send(data);
+  }
 
-        const { status, data } = response;
-        return res.status(status).send(data);
+  async requestWalk(req: Request, res: Response) {
+    const { calculationId } = req.params;
+
+    if (!calculationId) {
+      return res.status(400).send({ message: 'Requisição inválida' });
     }
+
+    const response = await DogWalkerRepository.requestRide(calculationId);
+
+    const { status, data } = response;
+    return res.status(status).send(data);
+  }
+
+  async acceptRide(req: Request, res: Response) {
+    const { requestId } = req.params;
+
+    if (!requestId) {
+      return res.status(400).send({ message: 'Requisição inválida' });
+    }
+
+    const response = await DogWalkerRepository.acceptRide(requestId);
+
+    const { status, data } = response;
+    return res.status(status).send(data);
+  }
 }
 
 export default new DogWalker();

@@ -1,11 +1,11 @@
 import express from 'express';
-import { createServer } from 'node:http';
-import { Server } from "socket.io";
+import {createServer} from 'node:http';
+import {Server} from 'socket.io';
 import setupWebSocket from './websocket';
 import routes from './routes';
 import dotenv from 'dotenv';
 import MongoConnection from './database/mongoConnection';
-import { SocketInit } from './websocket/testClas';
+import {SocketInit} from './websocket/testClas';
 
 dotenv.config();
 
@@ -14,15 +14,15 @@ app.use(express.json());
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["*"],
-  }
+    origin: ['*'],
+  },
 });
 const port = 3000;
 
 app.use('/', routes);
 
 // setupWebSocket(io);
-new  SocketInit(io);
+new SocketInit(io);
 
 (async () => {
   try {
@@ -31,7 +31,6 @@ new  SocketInit(io);
 
     const db = mongoConnection.db;
     console.log(`Database connected: ${db?.databaseName}`);
-
 
     server.listen(port, () => {
       console.log(`Server is running on http://localhost:${port} 🔥`);
