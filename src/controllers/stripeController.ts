@@ -1,9 +1,9 @@
-import { Request, Response } from 'express';
+import {Request, Response} from 'express';
 import StripeUtils from '../utils/stripe';
 
 class StripeController {
   async createSetupIntent(req: Request, res: Response) {
-    const { customerId } = req.params;
+    const {customerId} = req.params;
     if (!customerId) return res.status(400).send('Requisição inválida');
     try {
       const customerStripe = await StripeUtils.setupIntent(customerId);
@@ -13,7 +13,7 @@ class StripeController {
         data: customerStripe,
       };
 
-      const { status, data } = response;
+      const {status, data} = response;
 
       return res.status(status).send(data);
     } catch {
@@ -25,7 +25,7 @@ class StripeController {
   }
 
   async listCustomerPayments(req: Request, res: Response) {
-    const { customerId } = req.params;
+    const {customerId} = req.params;
     if (!customerId) return res.status(400).send('Requisição inválida');
     try {
       const list = await StripeUtils.listPayments(customerId);
@@ -35,7 +35,7 @@ class StripeController {
         data: list,
       };
 
-      const { status, data } = response;
+      const {status, data} = response;
 
       return res.status(status).send(data);
     } catch {

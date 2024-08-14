@@ -7,7 +7,7 @@ export const calculateWalkCost = ({
 }) => {
   const DOG_PRICE_PER_DOG = 4.99;
 
-  const WALK_DURATION_PRICES: { [key: number]: number } = {
+  const WALK_DURATION_PRICES: {[key: number]: number} = {
     15: 19.99,
     30: 28.99,
     60: 57.99,
@@ -15,7 +15,7 @@ export const calculateWalkCost = ({
 
   if (!WALK_DURATION_PRICES.hasOwnProperty(walkDurationMinutes)) {
     throw new Error(
-      `Invalid walk duration: ${walkDurationMinutes} minutes. Choose between 15, 30, or 60 minutes.`
+      `Invalid walk duration: ${walkDurationMinutes} minutes. Choose between 15, 30, or 60 minutes.`,
     );
   }
 

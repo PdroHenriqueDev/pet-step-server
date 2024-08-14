@@ -1,4 +1,4 @@
-import { MongoClient, Db } from 'mongodb';
+import {MongoClient, Db} from 'mongodb';
 
 class MongoConnection {
   private static instance: MongoConnection;

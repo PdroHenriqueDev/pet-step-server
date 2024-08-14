@@ -6,11 +6,11 @@ class StripUtils {
   }
 
   async getStripeCustomerByEmail(email: string) {
-    const custumers = await this.stripe.customers.list({ email });
+    const custumers = await this.stripe.customers.list({email});
     return custumers.data[0];
   }
 
-  async createStripeCustomer({ email, name }: { email: string; name: string }) {
+  async createStripeCustomer({email, name}: {email: string; name: string}) {
     const custumerExists = await this.getStripeCustomerByEmail(email);
     if (custumerExists) return custumerExists;
 
@@ -36,7 +36,7 @@ class StripUtils {
     const paymentMethods =
       await this.stripe.customers.listPaymentMethods(customerId);
 
-    const { data } = paymentMethods;
+    const {data} = paymentMethods;
 
     return data;
   }

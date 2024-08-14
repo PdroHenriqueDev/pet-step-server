@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get(
   '/create-setup-intent/:customerId',
-  StripeController.createSetupIntent
+  StripeController.createSetupIntent,
 );
 router.get('/list-payments/:customerId', StripeController.listCustomerPayments);
 

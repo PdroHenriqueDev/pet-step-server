@@ -1,7 +1,7 @@
-import { ObjectId } from 'mongodb';
+import {ObjectId} from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
 import StripeUtils from '../utils/stripe';
-import { Owner } from '../interfaces/owner';
+import {Owner} from '../interfaces/owner';
 
 class OwnerRepository {
   get db() {
@@ -16,9 +16,9 @@ class OwnerRepository {
 
   async add(owner: any) {
     try {
-      const { email, name } = owner;
+      const {email, name} = owner;
 
-      const ownerExists = await this.ownerCollection.findOne({ email });
+      const ownerExists = await this.ownerCollection.findOne({email});
 
       if (ownerExists) {
         return {
@@ -109,12 +109,12 @@ class OwnerRepository {
         };
       }
 
-      const { customerStripe, defaultPayment } = owner;
+      const {customerStripe, defaultPayment} = owner;
 
       const paymentMethods = await StripeUtils.listPayments(customerStripe.id);
 
-      const methods = paymentMethods.map(({ id, card, type }) => {
-        const { brand, exp_month, exp_year, last4, funding } = card ?? {};
+      const methods = paymentMethods.map(({id, card, type}) => {
+        const {brand, exp_month, exp_year, last4, funding} = card ?? {};
 
         const isSelected = defaultPayment === id;
 

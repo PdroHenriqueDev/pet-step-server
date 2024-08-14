@@ -1,4 +1,4 @@
-import { Server, Socket } from 'socket.io';
+import {Server, Socket} from 'socket.io';
 
 const setupWebSocket = (io: Server) => {
   io.on('connection', (socket: Socket) => {
