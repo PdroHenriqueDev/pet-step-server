@@ -1,13 +1,14 @@
-import { ObjectId } from 'mongodb';
+import {ObjectId} from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
 import FirebaseRepository from './firebaseRepository';
-import { getDistance } from 'geolib';
-import { DogWalker } from '../interfaces/dogWalker';
-import { calculateWalkCost } from '../utils/calculateWalkCost';
+import {getDistance} from 'geolib';
+import {DogWalker} from '../interfaces/dogWalker';
+import {calculateWalkCost} from '../utils/calculateWalkCost';
 import stripePackage from 'stripe';
-import { SocketInit } from '../websocket/testClas';
-import { Location } from '../interfaces/location';
-import { RideEvents } from '../enums/ride';
+import {SocketInit} from '../websocket/testClas';
+import {Location} from '../interfaces/location';
+import {RideEvents} from '../enums/ride';
+import {Owner} from '../interfaces/owner';
 
 class DogWalkerRepository {
   get db() {
@@ -80,14 +81,14 @@ class DogWalkerRepository {
   async findNearestDogWalkers(
     latitude: number,
     longitude: number,
-    radiusInMeters: number = 10000
+    radiusInMeters: number = 10000,
   ) {
     try {
       const nearestDogWalkers = await this.dogWalkersCollection
         .find({
           location: {
             $near: {
-              $geometry: { type: 'Point', coordinates: [longitude, latitude] },
+              $geometry: {type: 'Point', coordinates: [longitude, latitude]},
               $maxDistance: radiusInMeters,
             },
           },
@@ -95,13 +96,13 @@ class DogWalkerRepository {
         })
         .toArray();
 
-      const dogWalkersWithDistance = nearestDogWalkers.map((dogWalker) => {
+      const dogWalkersWithDistance = nearestDogWalkers.map(dogWalker => {
         const distanceInMeters = getDistance(
-          { latitude, longitude },
+          {latitude, longitude},
           {
             latitude: dogWalker.location.coordinates[1],
             longitude: dogWalker.location.coordinates[0],
-          }
+          },
         );
         const distanceInKilometers = (distanceInMeters / 1000).toFixed(2);
         return {
@@ -126,28 +127,28 @@ class DogWalkerRepository {
   async findRecommededDogWalkers(
     latitude: number,
     longitude: number,
-    radiusInMeters: number = 10000
+    radiusInMeters: number = 10000,
   ) {
     try {
       const recommedDogWalkers = await this.dogWalkersCollection
         .find({
           location: {
             $near: {
-              $geometry: { type: 'Point', coordinates: [longitude, latitude] },
+              $geometry: {type: 'Point', coordinates: [longitude, latitude]},
               $maxDistance: radiusInMeters,
             },
           },
-          rate: { $gte: 4.5 },
+          rate: {$gte: 4.5},
         })
         .toArray();
 
-      const dogWalkersWithDistance = recommedDogWalkers.map((dogWalker) => {
+      const dogWalkersWithDistance = recommedDogWalkers.map(dogWalker => {
         const distanceInMeters = getDistance(
-          { latitude, longitude },
+          {latitude, longitude},
           {
             latitude: dogWalker.location.coordinates[1],
             longitude: dogWalker.location.coordinates[0],
-          }
+          },
         );
         const distanceInKilometers = (distanceInMeters / 1000).toFixed(2);
 
@@ -222,7 +223,7 @@ class DogWalkerRepository {
         };
       }
 
-      const { token } = dogWalkerResult.data as any;
+      const {token} = dogWalkerResult.data as any;
 
       const result = await FirebaseRepository.sendNotification({
         title,
@@ -271,13 +272,13 @@ class DogWalkerRepository {
         newTotalRatings;
 
       await this.dogWalkersCollection.updateOne(
-        { _id: new ObjectId(dogWalkerId) },
+        {_id: new ObjectId(dogWalkerId)},
         {
           $set: {
             rate: newRate,
             totalRatings: newTotalRatings,
           },
-        }
+        },
       );
 
       return {
@@ -355,7 +356,7 @@ class DogWalkerRepository {
     }
   }
 
-  async requestRide(calculationId: string) {
+  async requestWalk(calculationId: string) {
     try {
       const calculation = await this.calculationRequestCollection.findOne({
         _id: new ObjectId(calculationId),
@@ -368,7 +369,8 @@ class DogWalkerRepository {
         };
       }
 
-      const { dogWalkerId } = calculation;
+      const {dogWalkerId, ownerId} = calculation;
+
       const dogWalkerResult = await this.findDogWalkerById(dogWalkerId);
 
       if (dogWalkerResult.status !== 200 || !dogWalkerResult.data) {
@@ -378,13 +380,37 @@ class DogWalkerRepository {
         };
       }
 
+      const owner = await await this.ownerCollection.findOne<Owner>({
+        _id: new ObjectId(ownerId),
+      });
+
+      if (!owner)
+        return {
+          status: 404,
+          error: 'Usuário não encontrado',
+        };
+
       const requestRideCollection = await this.requestRideCollection.insertOne({
         calculation,
         createdAt: this.currentDate,
         updatedAt: this.currentDate,
       });
 
-      const { token } = dogWalkerResult.data as any;
+      const requestId = requestRideCollection.insertedId;
+
+      const updateResult = await this.ownerCollection.updateOne(
+        {_id: new ObjectId(ownerId)},
+        {$set: {currentWalk: requestId}},
+      );
+
+      if (updateResult.modifiedCount === 0) {
+        return {
+          status: 500,
+          error: 'Não foi possível solicitar o passeio.',
+        };
+      }
+
+      const {token} = dogWalkerResult.data as any;
       const result = await FirebaseRepository.sendNotification({
         title: 'Passeio',
         body: 'Aceita o passeio?',
@@ -394,17 +420,15 @@ class DogWalkerRepository {
       if (result.status !== 200) {
         return {
           status: 500,
-          error: 'Algo de errado. Tente novamente mais tarde.',
+          error: 'Não conseguimos notificar o Dog Walker',
         };
       }
 
-      const response = {
-        requestId: requestRideCollection.insertedId,
-      };
-
       return {
         status: 200,
-        data: response,
+        data: {
+          requestId,
+        },
       };
     } catch (err) {
       console.log(`Error: ${err}`);
@@ -425,7 +449,7 @@ class DogWalkerRepository {
         this.socket.publishEventToRoom(
           requestId,
           RideEvents.INVALID_REQUEST,
-          'Requisição inválida'
+          'Requisição inválida',
         );
         return {
           status: 404,
@@ -433,8 +457,8 @@ class DogWalkerRepository {
         };
       }
 
-      const { calculation } = requestRide;
-      const { ownerId, costDetails } = calculation;
+      const {calculation} = requestRide;
+      const {ownerId, costDetails} = calculation;
 
       const owner = await this.ownerCollection.findOne({
         _id: new ObjectId(ownerId as string),
@@ -444,7 +468,7 @@ class DogWalkerRepository {
         this.socket.publishEventToRoom(
           requestId,
           RideEvents.INVALID_REQUEST,
-          'Requisição inválida'
+          'Requisição inválida',
         );
         return {
           status: 404,
@@ -452,9 +476,9 @@ class DogWalkerRepository {
         };
       }
 
-      const { customerStripe, defaultPayment } = owner;
+      const {customerStripe, defaultPayment} = owner;
 
-      const { totalCost } = costDetails;
+      const {totalCost} = costDetails;
 
       const valueInCents = Math.round(totalCost * 100);
       const paymentIntent = await this.stripe.paymentIntents.create({
@@ -474,7 +498,7 @@ class DogWalkerRepository {
         this.socket.publishEventToRoom(
           requestId,
           RideEvents.PAYMENT_FAILURE,
-          'Falha no pagamento'
+          'Falha no pagamento',
         );
         return {
           status: 400,
@@ -485,7 +509,7 @@ class DogWalkerRepository {
       this.socket.publishEventToRoom(
         requestId,
         RideEvents.PAYMENT_SUCCESS,
-        'Pagamento bem-sucedido'
+        'Pagamento bem-sucedido',
       );
 
       return {
@@ -497,7 +521,7 @@ class DogWalkerRepository {
       this.socket.publishEventToRoom(
         requestId,
         RideEvents.SERVER_ERROR,
-        'Erro interno do servidor'
+        'Erro interno do servidor',
       );
       return {
         status: 500,

@@ -49,6 +49,7 @@ class OwnerRepository {
         dogs: dogsWithId,
         rate: 5,
         totalRatings: 0,
+        currentWalk: null,
         createdAt: this.currentDate,
         updatedAt: this.currentDate,
       };
