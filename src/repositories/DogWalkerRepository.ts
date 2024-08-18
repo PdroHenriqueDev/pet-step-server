@@ -380,7 +380,7 @@ class DogWalkerRepository {
         };
       }
 
-      const owner = await await this.ownerCollection.findOne<Owner>({
+      const owner = await this.ownerCollection.findOne<Owner>({
         _id: new ObjectId(ownerId),
       });
 
@@ -497,19 +497,19 @@ class DogWalkerRepository {
       ) {
         this.socket.publishEventToRoom(
           requestId,
-          RideEvents.PAYMENT_FAILURE,
-          'Falha no pagamento',
+          RideEvents.SERVER_ERROR,
+          'Erro interno do servidor',
         );
         return {
-          status: 400,
-          data: 'Falha no pagamento',
+          status: 500,
+          data: 'Erro interno do servidor',
         };
       }
 
       this.socket.publishEventToRoom(
         requestId,
-        RideEvents.PAYMENT_SUCCESS,
-        'Pagamento bem-sucedido',
+        RideEvents.SUCCESS,
+        'Passeio aceito',
       );
 
       return {
