@@ -9,6 +9,7 @@ import {SocketInit} from '../websocket/testClas';
 import {Location} from '../interfaces/location';
 import {RideEvents} from '../enums/ride';
 import {Owner} from '../interfaces/owner';
+import StripeUtils from '../utils/stripe';
 
 class DogWalkerRepository {
   get db() {
@@ -526,19 +527,17 @@ class DogWalkerRepository {
       const {totalCost} = costDetails;
 
       const valueInCents = Math.round(totalCost * 100);
-      const paymentIntent = await this.stripe.paymentIntents.create({
-        amount: valueInCents,
-        currency: 'brl',
-        customer: customerStripe.id,
-        payment_method: defaultPayment,
-        off_session: true,
-        confirm: true,
-        description: requestId,
+
+      const paymentStatus = await StripeUtils.handlePayment({
+        requestId,
+        valueInCents,
+        customerStripeId: customerStripe.id,
+        defaultPayment,
       });
 
       if (
-        paymentIntent.status !== 'succeeded' &&
-        paymentIntent.status !== 'processing'
+        paymentStatus.status !== 'succeeded' &&
+        paymentStatus.status !== 'processing'
       ) {
         await this.requestRideCollection.updateOne(
           {_id: new ObjectId(requestId)},

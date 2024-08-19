@@ -40,6 +40,30 @@ class StripUtils {
 
     return data;
   }
+
+  async handlePayment({
+    valueInCents,
+    customerStripeId,
+    defaultPayment,
+    requestId,
+  }: {
+    valueInCents: number;
+    customerStripeId: string;
+    defaultPayment: string;
+    requestId: string;
+  }) {
+    const paymentIntent = await this.stripe.paymentIntents.create({
+      amount: valueInCents,
+      currency: 'brl',
+      customer: customerStripeId,
+      payment_method: defaultPayment,
+      off_session: true,
+      confirm: true,
+      description: requestId,
+    });
+
+    return paymentIntent;
+  }
 }
 
 export default new StripUtils();
