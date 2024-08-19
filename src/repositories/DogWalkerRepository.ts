@@ -439,6 +439,43 @@ class DogWalkerRepository {
     }
   }
 
+  private async handleInvalidRideRequest(requestId: string) {
+    await this.requestRideCollection.updateOne(
+      {_id: new ObjectId(requestId)},
+      {$set: {status: RideEvents.INVALID_REQUEST}},
+    );
+
+    this.socket.publishEventToRoom(
+      requestId,
+      'dog_walker_response',
+      RideEvents.INVALID_REQUEST,
+    );
+  }
+
+  private async handleFailedRideRequest(requestId: string, status: RideEvents) {
+    const requestRide = await this.requestRideCollection.findOne({
+      _id: new ObjectId(requestId),
+    });
+
+    if (!requestRide) return;
+
+    const {calculation} = requestRide;
+    const {ownerId} = calculation;
+
+    await Promise.all([
+      this.ownerCollection.updateOne(
+        {_id: new ObjectId(ownerId as string)},
+        {$set: {currentWalk: null}},
+      ),
+      this.requestRideCollection.updateOne(
+        {_id: new ObjectId(requestId)},
+        {$set: {status}},
+      ),
+    ]);
+
+    this.socket.publishEventToRoom(requestId, 'dog_walker_response', status);
+  }
+
   async acceptRide(requestId: string) {
     try {
       const requestRide = await this.requestRideCollection.findOne({
@@ -446,11 +483,14 @@ class DogWalkerRepository {
       });
 
       if (!requestRide) {
+        await this.handleInvalidRideRequest(requestId);
+
         this.socket.publishEventToRoom(
           requestId,
+          'dog_walker_response',
           RideEvents.INVALID_REQUEST,
-          'Requisição inválida',
         );
+
         return {
           status: 404,
           data: 'Requisição inválida',
@@ -465,11 +505,8 @@ class DogWalkerRepository {
       });
 
       if (!owner) {
-        this.socket.publishEventToRoom(
-          requestId,
-          RideEvents.INVALID_REQUEST,
-          'Requisição inválida',
-        );
+        await this.handleInvalidRideRequest(requestId);
+
         return {
           status: 404,
           data: 'Requisição inválida',
@@ -495,21 +532,37 @@ class DogWalkerRepository {
         paymentIntent.status !== 'succeeded' &&
         paymentIntent.status !== 'processing'
       ) {
+        await this.requestRideCollection.updateOne(
+          {_id: new ObjectId(requestId)},
+          {$set: {status: RideEvents.PAYMENT_FAILURE}},
+        );
+
+        await this.ownerCollection.updateOne(
+          {_id: new ObjectId(ownerId as string)},
+          {$set: {currentWalk: null}},
+        );
+
         this.socket.publishEventToRoom(
           requestId,
-          RideEvents.SERVER_ERROR,
-          'Erro interno do servidor',
+          'dog_walker_response',
+          RideEvents.PAYMENT_FAILURE,
         );
+
         return {
-          status: 500,
-          data: 'Erro interno do servidor',
+          status: 400,
+          data: 'Erro no pagamento',
         };
       }
 
+      await this.requestRideCollection.updateOne(
+        {_id: new ObjectId(requestId)},
+        {$set: {status: RideEvents.ACCEPTED_SUCCESSFULLY}},
+      );
+
       this.socket.publishEventToRoom(
         requestId,
-        RideEvents.SUCCESS,
-        'Passeio aceito',
+        'dog_walker_response',
+        RideEvents.ACCEPTED_SUCCESSFULLY,
       );
 
       return {
@@ -517,12 +570,9 @@ class DogWalkerRepository {
         data: requestId,
       };
     } catch (error) {
-      console.error('Error aceitando o passeio:', error);
-      this.socket.publishEventToRoom(
-        requestId,
-        RideEvents.SERVER_ERROR,
-        'Erro interno do servidor',
-      );
+      console.error(`Error aceitando o passeio ${requestId}:`, error);
+      await this.handleFailedRideRequest(requestId, RideEvents.SERVER_ERROR);
+
       return {
         status: 500,
         data: 'Erro interno do servidor',
