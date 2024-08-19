@@ -10,6 +10,7 @@ export interface Owner {
   rate: number;
   totalRatings: number;
   defaultPayment: string;
+  currentWalk: string;
   customerStripe: {
     id: string;
   };

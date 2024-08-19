@@ -390,6 +390,14 @@ class DogWalkerRepository {
           error: 'Usuário não encontrado',
         };
 
+      const {currentWalk} = owner;
+
+      if (currentWalk)
+        return {
+          status: 400,
+          error: 'Já tem um passeio em andamento',
+        };
+
       const requestRideCollection = await this.requestRideCollection.insertOne({
         calculation,
         createdAt: this.currentDate,
