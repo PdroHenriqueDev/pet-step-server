@@ -409,7 +409,14 @@ class DogWalkerRepository {
 
       const updateResult = await this.ownerCollection.updateOne(
         {_id: new ObjectId(ownerId)},
-        {$set: {currentWalk: requestId}},
+        {
+          $set: {
+            currentWalk: {
+              requestId,
+              status: RideEvents.PENDING,
+            },
+          },
+        },
       );
 
       if (updateResult.modifiedCount === 0) {
@@ -506,7 +513,21 @@ class DogWalkerRepository {
         };
       }
 
-      const {calculation} = requestRide;
+      const {calculation, status} = requestRide;
+
+      if (
+        status === RideEvents.ACCEPTED_SUCCESSFULLY ||
+        status === RideEvents.CANCELLED
+      ) {
+        return {
+          status: 400,
+          data:
+            status === RideEvents.ACCEPTED_SUCCESSFULLY
+              ? 'Passeio já foi aceito'
+              : 'Passeio foi cancelado',
+        };
+      }
+
       const {ownerId, costDetails} = calculation;
 
       const owner = await this.ownerCollection.findOne({
@@ -564,6 +585,15 @@ class DogWalkerRepository {
       await this.requestRideCollection.updateOne(
         {_id: new ObjectId(requestId)},
         {$set: {status: RideEvents.ACCEPTED_SUCCESSFULLY}},
+      );
+
+      await this.ownerCollection.updateOne(
+        {_id: new ObjectId(ownerId)},
+        {
+          $set: {
+            currentWalk: {requestId, status: RideEvents.ACCEPTED_SUCCESSFULLY},
+          },
+        },
       );
 
       this.socket.publishEventToRoom(
