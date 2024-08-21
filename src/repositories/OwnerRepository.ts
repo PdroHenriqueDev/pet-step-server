@@ -22,7 +22,7 @@ class OwnerRepository {
 
       if (ownerExists) {
         return {
-          status: 201,
+          status: 400,
           data: 'Usuário já cadastrado',
         };
       }
@@ -143,6 +143,39 @@ class OwnerRepository {
         data: {
           message: 'Error',
         },
+      };
+    }
+  }
+
+  async updateDefaultPaymentMethod({
+    ownerId,
+    paymentMethodId,
+  }: {
+    ownerId: string;
+    paymentMethodId: string;
+  }) {
+    try {
+      const result = await this.ownerCollection.updateOne(
+        {_id: new ObjectId(ownerId)},
+        {$set: {defaultPayment: paymentMethodId}},
+      );
+
+      if (result.matchedCount === 0) {
+        return {
+          status: 404,
+          data: 'Usuário não encontrado',
+        };
+      }
+
+      return {
+        status: 200,
+        data: 'Método de pagamento padrão atualizado com sucesso',
+      };
+    } catch (error) {
+      console.error('Error updating default payment method:', error);
+      return {
+        status: 500,
+        data: 'Erro ao atualizar o método de pagamento padrão',
       };
     }
   }

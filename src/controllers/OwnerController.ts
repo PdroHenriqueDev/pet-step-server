@@ -40,6 +40,23 @@ class Owner {
     const {status, data} = response;
     return res.status(status).send(data);
   }
+
+  async updateDefaultPaymentMethod(req: Request, res: Response) {
+    const {id} = req.params;
+    const {paymentMethodId} = req.body;
+
+    if (!id || !paymentMethodId) {
+      return res.status(400).send({error: 'Requisição inválida'});
+    }
+
+    const response = await OwnerRepository.updateDefaultPaymentMethod({
+      ownerId: id,
+      paymentMethodId,
+    });
+
+    const {status, data} = response;
+    return res.status(status).send(data);
+  }
 }
 
 export default new Owner();
