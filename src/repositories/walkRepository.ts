@@ -391,7 +391,7 @@ class WalkRepository {
         };
 
       const {dogWalker, calculation} = requestRide;
-      const {name, rate} = dogWalker ?? {};
+      const {_id, name, rate} = dogWalker ?? {};
 
       const {costDetails} = calculation ?? {};
       const {walkPrice} = costDetails ?? {};
@@ -399,6 +399,7 @@ class WalkRepository {
 
       const response = {
         dogWalker: {
+          _id: _id ?? null,
           name: name ?? null,
           rate: rate ?? null,
         },
