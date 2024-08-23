@@ -7,6 +7,6 @@ router.get(
   '/create-setup-intent/:customerId',
   StripeController.createSetupIntent,
 );
-router.get('/list-payments/:customerId', StripeController.listCustomerPayments);
+router.get('/list/:customerId', StripeController.listCustomerPayments);
 
 export default router;

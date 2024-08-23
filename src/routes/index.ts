@@ -12,7 +12,7 @@ router.get('/', (req, res) => {
 
 router.use('/dog-walker', dogWalkerRoutes);
 router.use('/owner', ownerRoutes);
-router.use('/stripe', stripeRoutes);
+router.use('/payment', stripeRoutes);
 router.use('/walk', walkRoutes);
 
 export default router;
