@@ -104,14 +104,14 @@ class WalkController {
     return res.status(status).send(data);
   }
 
-  async requestInfo(req: Request, res: Response) {
+  async walkData(req: Request, res: Response) {
     const {requestId} = req.params;
 
     if (!requestId) {
       return res.status(400).send({data: 'Requisição inválida'});
     }
 
-    const response = await WalkRepository.getRequestInfo(requestId);
+    const response = await WalkRepository.getRequestData(requestId);
 
     const {status, data} = response;
     return res.status(status).send(data);

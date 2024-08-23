@@ -378,23 +378,44 @@ class WalkRepository {
     }
   }
 
-  async getRequestInfo(requestId: string): Promise<RepositoryResponse> {
-    const requestRide = await this.requestRideCollection.findOne({
-      _id: new ObjectId(requestId),
-    });
+  async getRequestData(requestId: string): Promise<RepositoryResponse> {
+    try {
+      const requestRide = await this.requestRideCollection.findOne({
+        _id: new ObjectId(requestId),
+      });
 
-    if (!requestRide)
-      return {
-        status: 404,
-        data: 'Solicitação não existe',
+      if (!requestRide)
+        return {
+          status: 404,
+          data: 'Solicitação não existe',
+        };
+
+      const {dogWalker, calculation} = requestRide;
+      const {name, rate} = dogWalker ?? {};
+
+      const {costDetails} = calculation ?? {};
+      const {walkPrice} = costDetails ?? {};
+      const {durationMinutes} = walkPrice ?? {};
+
+      const response = {
+        dogWalker: {
+          name: name ?? null,
+          rate: rate ?? null,
+        },
+        durationMinutes: durationMinutes ?? null,
       };
 
-    const response = {};
-
-    return {
-      status: 200,
-      data: requestRide,
-    };
+      return {
+        status: 200,
+        data: response,
+      };
+    } catch (error) {
+      console.error('Erro ao obter dados da solicitação:', error);
+      return {
+        status: 500,
+        data: 'Erro interno do servidor',
+      };
+    }
   }
 }
 
