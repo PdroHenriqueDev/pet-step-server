@@ -1,4 +1,4 @@
-import { Server, Socket } from 'socket.io';
+import {Server, Socket} from 'socket.io';
 
 export class SocketInit {
   private static instance: SocketInit;
@@ -9,12 +9,26 @@ export class SocketInit {
     SocketInit.instance = this;
     this.socketIo.on('connection', (socket: Socket) => {
       console.log('User connected');
+      this.simulateWalk(socket);
 
       const requestId = socket.handshake.query?.request_id ?? '';
       if (requestId) {
         const roomId = this.getRoomId(requestId as string);
         socket.join(roomId);
+        console.log(`User joined room: ${roomId}`);
       }
+
+      socket.on('dog_walker_location', data => {
+        console.log('Received location data:', data);
+        const requestId = socket.handshake.query?.request_id as string;
+        if (requestId) {
+          const {longitude, latitude} = data;
+          this.publishEventToRoom(requestId, 'dog_walker_location', {
+            longitude,
+            latitude,
+          });
+        }
+      });
 
       socket.on('disconnect', () => {
         console.log('User disconnected');
@@ -37,5 +51,25 @@ export class SocketInit {
 
   private getRoomId(requestId: string): string {
     return `room-${requestId}`;
+  }
+
+  simulateWalk(socket: Socket) {
+    console.log('got here simulateWalk');
+    let latitude = -23.5505;
+    let longitude = -46.6333;
+
+    const interval = setInterval(() => {
+      latitude += 0.0001;
+      longitude += 0.0001;
+
+      socket.emit('dog_walker_location', {latitude, longitude});
+      console.log('Enviando coordenadas:', {latitude, longitude});
+
+      if (latitude >= -23.5485 || longitude >= -46.6313) {
+        clearInterval(interval);
+        socket.disconnect();
+        console.log('Passeio simulado finalizado.');
+      }
+    }, 5000);
   }
 }
