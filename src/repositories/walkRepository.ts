@@ -7,6 +7,7 @@ import {calculateWalkCost} from '../utils/calculateWalkCost';
 import {RideEvents} from '../enums/ride';
 import FirebaseRepository from './firebaseRepository';
 import {SocketInit} from '../websocket/testClas';
+import {RepositoryResponse} from '../interfaces/apitResponse';
 
 class WalkRepository {
   get db() {
@@ -31,7 +32,7 @@ class WalkRepository {
 
   currentDate = new Date();
 
-  async getRequestById(requestId: string) {
+  async getRequestById(requestId: string): Promise<RepositoryResponse> {
     const requestRide = await this.requestRideCollection.findOne({
       _id: new ObjectId(requestId),
     });
@@ -60,7 +61,7 @@ class WalkRepository {
     numberOfDogs: number;
     walkDurationMinutes: number;
     receivedLocation: Location;
-  }) {
+  }): Promise<RepositoryResponse> {
     try {
       const dogWalkerResult =
         await DogWalkerRepository.findDogWalkerById(dogWalkerId);
@@ -68,7 +69,7 @@ class WalkRepository {
       if (dogWalkerResult.status !== 200 || !dogWalkerResult.data) {
         return {
           status: 404,
-          error: 'Dog walker não encontrado',
+          data: 'Dog walker não encontrado',
         };
       }
 
@@ -90,7 +91,7 @@ class WalkRepository {
       if (!insertResult.insertedId) {
         return {
           status: 500,
-          error: 'Algo de errado.',
+          data: 'Algo de errado.',
         };
       }
 
@@ -112,7 +113,7 @@ class WalkRepository {
     }
   }
 
-  async requestWalk(calculationId: string) {
+  async requestWalk(calculationId: string): Promise<RepositoryResponse> {
     try {
       const calculation =
         await DogWalkerRepository.calculationRequestCollection.findOne({
@@ -131,10 +132,12 @@ class WalkRepository {
       const dogWalkerResult =
         await DogWalkerRepository.findDogWalkerById(dogWalkerId);
 
-      if (dogWalkerResult.status !== 200 || !dogWalkerResult.data) {
+      const {status, data: dogWalker} = dogWalkerResult;
+
+      if (status !== 200 || !dogWalker) {
         return {
           status: 404,
-          error: 'Dog walker não encontrado',
+          data: 'Dog walker não encontrado',
         };
       }
 
@@ -145,7 +148,7 @@ class WalkRepository {
       if (!owner)
         return {
           status: 404,
-          error: 'Usuário não encontrado',
+          data: 'Usuário não encontrado',
         };
 
       const {currentWalk} = owner;
@@ -153,11 +156,12 @@ class WalkRepository {
       if (currentWalk)
         return {
           status: 400,
-          error: 'Já tem um passeio em andamento',
+          data: 'Já tem um passeio em andamento',
         };
 
       const requestRideCollection = await this.requestRideCollection.insertOne({
         calculation,
+        dogWalker,
         createdAt: this.currentDate,
         updatedAt: this.currentDate,
       });
@@ -179,7 +183,7 @@ class WalkRepository {
       if (updateResult.modifiedCount === 0) {
         return {
           status: 500,
-          error: 'Não foi possível solicitar o passeio.',
+          data: 'Não foi possível solicitar o passeio.',
         };
       }
 
@@ -193,7 +197,7 @@ class WalkRepository {
       if (result.status !== 200) {
         return {
           status: 500,
-          error: 'Não conseguimos notificar o Dog Walker',
+          data: 'Não conseguimos notificar o Dog Walker',
         };
       }
 
@@ -249,7 +253,7 @@ class WalkRepository {
     this.socket.publishEventToRoom(requestId, 'dog_walker_response', status);
   }
 
-  async acceptRide(requestId: string) {
+  async acceptRide(requestId: string): Promise<RepositoryResponse> {
     try {
       const requestRide = await this.requestRideCollection.findOne({
         _id: new ObjectId(requestId),
@@ -372,6 +376,25 @@ class WalkRepository {
         data: 'Erro interno do servidor',
       };
     }
+  }
+
+  async getRequestInfo(requestId: string): Promise<RepositoryResponse> {
+    const requestRide = await this.requestRideCollection.findOne({
+      _id: new ObjectId(requestId),
+    });
+
+    if (!requestRide)
+      return {
+        status: 404,
+        data: 'Solicitação não existe',
+      };
+
+    const response = {};
+
+    return {
+      status: 200,
+      data: requestRide,
+    };
   }
 }
 
