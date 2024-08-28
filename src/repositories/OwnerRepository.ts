@@ -2,6 +2,7 @@ import {ObjectId} from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
 import StripeUtils from '../utils/stripe';
 import {Owner} from '../interfaces/owner';
+import {RepositoryResponse} from '../interfaces/apitResponse';
 
 class OwnerRepository {
   get db() {
@@ -14,7 +15,7 @@ class OwnerRepository {
 
   currentDate = new Date();
 
-  async add(owner: any) {
+  async add(owner: any): Promise<RepositoryResponse> {
     try {
       const {email, name} = owner;
 
@@ -69,7 +70,7 @@ class OwnerRepository {
     }
   }
 
-  async findOwnerById(id: string) {
+  async findOwnerById(id: string): Promise<RepositoryResponse<Owner>> {
     try {
       const owner = await this.ownerCollection.findOne<Owner>({
         _id: new ObjectId(id),
@@ -90,14 +91,12 @@ class OwnerRepository {
       console.log('Error finding owner:', error);
       return {
         status: 500,
-        data: {
-          message: 'Error',
-        },
+        data: 'Error',
       };
     }
   }
 
-  async listPayments(id: string) {
+  async listPayments(id: string): Promise<RepositoryResponse> {
     try {
       const owner = await this.ownerCollection.findOne<Owner>({
         _id: new ObjectId(id),
@@ -152,8 +151,8 @@ class OwnerRepository {
     paymentMethodId,
   }: {
     ownerId: string;
-    paymentMethodId: string;
-  }) {
+    paymentMethodId: string | null;
+  }): Promise<RepositoryResponse> {
     try {
       const result = await this.ownerCollection.updateOne(
         {_id: new ObjectId(ownerId)},

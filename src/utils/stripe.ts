@@ -64,6 +64,12 @@ class StripUtils {
 
     return paymentIntent;
   }
+
+  async detachPayment(paymentMethodId: string) {
+    const result = await this.stripe.paymentMethods.detach(paymentMethodId);
+
+    return result;
+  }
 }
 
 export default new StripUtils();
