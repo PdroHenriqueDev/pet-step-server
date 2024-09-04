@@ -58,28 +58,28 @@ class DogWalker {
     return res.status(status).send(data);
   }
 
-  async notification(req: Request, res: Response) {
-    const {id} = req.params;
-    const {title, body} = req.body;
+  // async notification(req: Request, res: Response) {
+  //   const {id} = req.params;
+  //   const {title, body} = req.body;
 
-    if (!id) {
-      return res.status(400).send({error: 'Dog walker não encontrado'});
-    }
+  //   if (!id) {
+  //     return res.status(400).send({error: 'Dog walker não encontrado'});
+  //   }
 
-    if (!title || !body) {
-      return res.status(400).send({error: 'Requisição inválida'});
-    }
+  //   if (!title || !body) {
+  //     return res.status(400).send({error: 'Requisição inválida'});
+  //   }
 
-    const response = await DogWalkerRepository.sendNotificationDogWalker({
-      dogWalkerId: id,
-      title,
-      body,
-    });
+  //   const response = await DogWalkerRepository.sendNotificationDogWalker({
+  //     dogWalkerId: id,
+  //     title,
+  //     body,
+  //   });
 
-    const {status, data, error} = response as any;
+  //   const {status, data, error} = response as any;
 
-    return res.status(status).send(data ?? error);
-  }
+  //   return res.status(status).send(data ?? error);
+  // }
 
   async feedback(req: Request, res: Response) {
     const {id} = req.params;

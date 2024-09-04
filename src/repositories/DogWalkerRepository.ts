@@ -1,6 +1,6 @@
 import {ObjectId} from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
-import FirebaseRepository from './firebaseRepository';
+// import FirebaseRepository from './firebaseRepository';
 import {getDistance} from 'geolib';
 import {DogWalker} from '../interfaces/dogWalker';
 import stripePackage from 'stripe';
@@ -200,41 +200,41 @@ class DogWalkerRepository {
     }
   }
 
-  async sendNotificationDogWalker({
-    dogWalkerId,
-    title,
-    body,
-  }: {
-    dogWalkerId: string;
-    title: string;
-    body: string;
-  }) {
-    try {
-      const dogWalkerResult = await this.findDogWalkerById(dogWalkerId);
+  // async sendNotificationDogWalker({
+  //   dogWalkerId,
+  //   title,
+  //   body,
+  // }: {
+  //   dogWalkerId: string;
+  //   title: string;
+  //   body: string;
+  // }) {
+  //   try {
+  //     const dogWalkerResult = await this.findDogWalkerById(dogWalkerId);
 
-      if (dogWalkerResult.status !== 200 || !dogWalkerResult.data) {
-        return {
-          status: 404,
-          error: 'Dog walker não encontrado',
-        };
-      }
+  //     if (dogWalkerResult.status !== 200 || !dogWalkerResult.data) {
+  //       return {
+  //         status: 404,
+  //         error: 'Dog walker não encontrado',
+  //       };
+  //     }
 
-      const {token} = dogWalkerResult.data as any;
+  //     const {token} = dogWalkerResult.data as any;
 
-      const result = await FirebaseRepository.sendNotification({
-        title,
-        body,
-        token,
-      });
+  //     const result = await FirebaseRepository.sendNotification({
+  //       title,
+  //       body,
+  //       token,
+  //     });
 
-      return {
-        status: 200,
-        data: result,
-      };
-    } catch (err) {
-      console.log('Got error =>', err);
-    }
-  }
+  //     return {
+  //       status: 200,
+  //       data: result,
+  //     };
+  //   } catch (err) {
+  //     console.log('Got error =>', err);
+  //   }
+  // }
 
   async saveFeedback({
     dogWalkerId,

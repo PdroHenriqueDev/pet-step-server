@@ -5,4 +5,5 @@ export enum RideEvents {
   SERVER_ERROR = 'server_error',
   PAYMENT_FAILURE = 'payment_failure',
   CANCELLED = 'cancelled',
+  COMPLETED = 'completed',
 }

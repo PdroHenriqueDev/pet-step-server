@@ -5,13 +5,19 @@ import {Owner} from '../interfaces/owner';
 import DogWalkerRepository from '../repositories/dogWalkerRepository';
 import {calculateWalkCost} from '../utils/calculateWalkCost';
 import {RideEvents} from '../enums/ride';
-import FirebaseRepository from './firebaseRepository';
+// import FirebaseRepository from './firebaseRepository';
 import {SocketInit} from '../websocket/testClas';
 import {RepositoryResponse} from '../interfaces/apitResponse';
+import {WalkProps} from '../interfaces/walk';
+import NotificatinUtils from '../utils/notification';
 
 class WalkRepository {
   get db() {
     return MongoConnection.getInstance().getdataBase();
+  }
+
+  get client() {
+    return MongoConnection.getInstance().getClient();
   }
 
   get ownerCollection() {
@@ -119,7 +125,6 @@ class WalkRepository {
         await DogWalkerRepository.calculationRequestCollection.findOne({
           _id: new ObjectId(calculationId),
         });
-
       if (!calculation) {
         return {
           status: 404,
@@ -140,24 +145,25 @@ class WalkRepository {
           data: 'Dog walker não encontrado',
         };
       }
-
       const owner = await this.ownerCollection.findOne<Owner>({
         _id: new ObjectId(ownerId),
       });
 
-      if (!owner)
+      if (!owner) {
         return {
           status: 404,
           data: 'Usuário não encontrado',
         };
+      }
 
       const {currentWalk} = owner;
 
-      if (currentWalk)
+      if (currentWalk) {
         return {
           status: 400,
           data: 'Já tem um passeio em andamento',
         };
+      }
 
       const requestRideCollection = await this.requestRideCollection.insertOne({
         calculation,
@@ -167,6 +173,30 @@ class WalkRepository {
       });
 
       const requestId = requestRideCollection.insertedId;
+
+      const {token} = dogWalkerResult.data as any;
+
+      const result = await NotificatinUtils.sendNotification({
+        title: 'Passeio',
+        body: 'Aceita o passeio?',
+        token,
+      });
+
+      if (result.status !== 200) {
+        await this.requestRideCollection.updateOne(
+          {_id: requestId},
+          {
+            $set: {
+              status: RideEvents.SERVER_ERROR,
+            },
+          },
+        );
+
+        return {
+          status: 500,
+          data: 'Não conseguimos notificar o Dog Walker',
+        };
+      }
 
       const updateResult = await this.ownerCollection.updateOne(
         {_id: new ObjectId(ownerId)},
@@ -179,25 +209,10 @@ class WalkRepository {
           },
         },
       );
-
       if (updateResult.modifiedCount === 0) {
         return {
           status: 500,
           data: 'Não foi possível solicitar o passeio.',
-        };
-      }
-
-      const {token} = dogWalkerResult.data as any;
-      const result = await FirebaseRepository.sendNotification({
-        title: 'Passeio',
-        body: 'Aceita o passeio?',
-        token,
-      });
-
-      if (result.status !== 200) {
-        return {
-          status: 500,
-          data: 'Não conseguimos notificar o Dog Walker',
         };
       }
 
@@ -208,7 +223,7 @@ class WalkRepository {
         },
       };
     } catch (err) {
-      console.log(`Error: ${err}`);
+      console.log(`Error ao solicitar passeio: ${err}`);
       return {
         status: 500,
         data: 'Algo de errado.',
@@ -412,6 +427,66 @@ class WalkRepository {
       };
     } catch (error) {
       console.error('Erro ao obter dados da solicitação:', error);
+      return {
+        status: 500,
+        data: 'Erro interno do servidor',
+      };
+    }
+  }
+
+  async requestsByOwner(
+    ownerId: string,
+    page: number = 1,
+  ): Promise<RepositoryResponse<WalkProps[]>> {
+    const pageSize = 10;
+    const skip = (page - 1) * pageSize;
+
+    try {
+      const requests = await this.requestRideCollection
+        .find(
+          {
+            'calculation.ownerId': ownerId,
+            status: RideEvents.COMPLETED,
+          },
+          {
+            projection: {
+              _id: 1,
+              'dogWalker.name': 1,
+              'dogWalker.profileUrl': 1,
+              'calculation.costDetails.walkPrice.price': 1,
+              createdAt: 1,
+            },
+          },
+        )
+        .skip(skip)
+        .limit(pageSize)
+        .toArray();
+
+      const responses = requests.map(request => {
+        const {_id, dogWalker, calculation, createdAt} = request;
+        const {name, profileUrl} = dogWalker ?? {};
+
+        const {costDetails} = calculation ?? {};
+        const {walkPrice} = costDetails ?? {};
+        const {price} = walkPrice ?? {};
+
+        return {
+          _id,
+          dogWalker: {
+            name: name ?? null,
+            profileUrl: profileUrl ?? null,
+          },
+          price: price ?? null,
+          startDate: createdAt ?? null,
+        };
+      });
+
+      return {
+        status: 200,
+        data: responses,
+      };
+    } catch (error) {
+      console.error('Erro ao listar solicitação:', error);
       return {
         status: 500,
         data: 'Erro interno do servidor',

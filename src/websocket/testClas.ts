@@ -70,6 +70,6 @@ export class SocketInit {
         socket.disconnect();
         console.log('Passeio simulado finalizado.');
       }
-    }, 5000);
+    }, 1000);
   }
 }

@@ -37,6 +37,10 @@ class MongoConnection {
     }
     return this.db;
   }
+
+  public getClient(): MongoClient {
+    return this.client;
+  }
 }
 
 export default MongoConnection;
