@@ -5,6 +5,13 @@ export interface DogWalkerProps {
   name: string;
   lastName: string;
   email?: string;
+  address: {
+    zipCode: string;
+    street: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+  };
   document?: string;
   password?: string;
   rate?: number;

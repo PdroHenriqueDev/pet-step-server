@@ -12,6 +12,7 @@ class DogWalker {
       'birthdate',
       'email',
       'password',
+      'address',
     ];
     const missingField = requiredFields.find(field => !req.body[field]);
 
@@ -21,12 +22,14 @@ class DogWalker {
         .send({error: `O campo "${missingField}" é obrigatório.`});
     }
 
-    const {name, lastName, birthdate, email, password, document} = req.body;
+    const {name, lastName, birthdate, email, password, document, address} =
+      req.body;
     const walker: DogWalkerProps = {
       name,
       lastName,
       birthdate,
       email,
+      address,
       document,
       password,
     };
