@@ -2,9 +2,11 @@ import {ObjectId} from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
 // import FirebaseRepository from './firebaseRepository';
 import {getDistance} from 'geolib';
-import {DogWalker} from '../interfaces/dogWalker';
+import {DogWalkerProps} from '../interfaces/dogWalker';
 import stripePackage from 'stripe';
 import {SocketInit} from '../websocket/testClas';
+import {RepositoryResponse} from '../interfaces/apitResponse';
+import {hash, genSalt} from 'bcrypt';
 
 class DogWalkerRepository {
   get db() {
@@ -41,17 +43,29 @@ class DogWalkerRepository {
 
   currentDate = new Date();
 
-  async addDogWalker(walker: any) {
+  async addDogWalker(dogWalker: DogWalkerProps): Promise<RepositoryResponse> {
     try {
       // collection.createIndex({ location: "2dsphere" })
-      const location = {
-        type: 'Point',
-        coordinates: [walker.longitude, walker.latitude],
-      };
+
+      const {password, email, document} = dogWalker;
+
+      const dogWalkerExists = await this.dogWalkersCollection.findOne({
+        $or: [{email}, {document}],
+      });
+
+      if (dogWalkerExists) {
+        return {
+          status: 400,
+          data: 'Dog Walker já cadastrado',
+        };
+      }
+
+      const salt = await genSalt();
+      const hashedPassword = await hash(password!, salt);
 
       const newDogWalker = {
-        ...walker,
-        location,
+        ...dogWalker,
+        password: hashedPassword,
         rate: 5,
         totalRatings: 0,
         isOnline: false,
@@ -67,6 +81,39 @@ class DogWalkerRepository {
       };
     } catch (error) {
       console.error('Error adding dog walker:', error);
+      return {
+        status: 500,
+        data: 'Error',
+      };
+    }
+  }
+
+  async addLocationToDogWalker({
+    walkerId,
+    longitude,
+    latitude,
+  }: {
+    walkerId: string;
+    longitude: number;
+    latitude: number;
+  }) {
+    try {
+      const location = {
+        type: 'Point',
+        coordinates: [longitude, latitude],
+      };
+
+      const result = await this.dogWalkersCollection.updateOne(
+        {_id: new ObjectId(walkerId)},
+        {$set: {location, updatedAt: new Date()}},
+      );
+
+      return {
+        status: 200,
+        data: result,
+      };
+    } catch (error) {
+      console.error('Error adding location:', error);
       return {
         status: 500,
         data: 'Error',
@@ -149,7 +196,7 @@ class DogWalkerRepository {
         const distanceInKilometers = (distanceInMeters / 1000).toFixed(2);
 
         return {
-          ...(dogWalker as unknown as DogWalker),
+          ...(dogWalker as unknown as DogWalkerProps),
           distance: distanceInKilometers,
         };
       });

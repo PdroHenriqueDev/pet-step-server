@@ -1,7 +1,14 @@
-export interface DogWalker {
-  _id: string;
+import {ObjectId} from 'mongodb';
+
+export interface DogWalkerProps {
+  _id?: ObjectId | undefined;
   name: string;
-  rate: number;
+  lastName: string;
+  email?: string;
+  document?: string;
+  password?: string;
+  rate?: number;
   distance?: string;
-  isOnline: boolean;
+  birthdate: string;
+  isOnline?: boolean;
 }

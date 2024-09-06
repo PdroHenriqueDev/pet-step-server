@@ -1,14 +1,35 @@
 import {Request, Response} from 'express';
 import DogWalkerRepository from '../repositories/dogWalkerRepository';
+import {DogWalkerProps} from '../interfaces/dogWalker';
+import {ApiResponse} from '../interfaces/apitResponse';
 
 class DogWalker {
-  async store(req: Request, res: Response) {
-    const {name, lastName, longitude, latitude, token} = req.body;
-    if (!name || !longitude || !latitude) {
-      return res.status(400).send({error: 'Missing required fields'});
+  async store(req: Request, res: Response): Promise<Response<ApiResponse>> {
+    const requiredFields = [
+      'name',
+      'lastName',
+      'document',
+      'birthdate',
+      'email',
+      'password',
+    ];
+    const missingField = requiredFields.find(field => !req.body[field]);
+
+    if (missingField) {
+      return res
+        .status(400)
+        .send({error: `O campo "${missingField}" é obrigatório.`});
     }
 
-    const walker = {name, lastName, longitude, latitude, token};
+    const {name, lastName, birthdate, email, password, document} = req.body;
+    const walker: DogWalkerProps = {
+      name,
+      lastName,
+      birthdate,
+      email,
+      document,
+      password,
+    };
 
     const response = await DogWalkerRepository.addDogWalker(walker);
     const {status, data} = response;

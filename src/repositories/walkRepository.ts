@@ -2,7 +2,7 @@ import {ObjectId} from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
 import StripeUtils from '../utils/stripe';
 import {Owner} from '../interfaces/owner';
-import DogWalkerRepository from '../repositories/dogWalkerRepository';
+import DogWalkerRepository from './dogWalkerRepository';
 import {calculateWalkCost} from '../utils/calculateWalkCost';
 import {RideEvents} from '../enums/ride';
 // import FirebaseRepository from './firebaseRepository';
