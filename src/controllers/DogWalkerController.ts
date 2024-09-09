@@ -13,6 +13,7 @@ class DogWalker {
       'email',
       'password',
       'address',
+      'phone',
     ];
     const missingField = requiredFields.find(field => !req.body[field]);
 
@@ -22,19 +23,33 @@ class DogWalker {
         .send({error: `O campo "${missingField}" é obrigatório.`});
     }
 
-    const {name, lastName, birthdate, email, password, document, address} =
-      req.body;
+    const {
+      name,
+      lastName,
+      birthdate,
+      email,
+      password,
+      document,
+      address,
+      phone,
+    } = req.body;
     const walker: DogWalkerProps = {
       name,
       lastName,
       birthdate,
       email,
+      phone,
       address,
       document,
       password,
     };
 
-    const response = await DogWalkerRepository.addDogWalker(walker);
+    const reqIp = req.ip;
+
+    const response = await DogWalkerRepository.addDogWalker(
+      walker,
+      reqIp as string,
+    );
     const {status, data} = response;
 
     return res.status(status).send(data);
@@ -118,6 +133,29 @@ class DogWalker {
       dogWalkerId: id,
       rate,
       comment,
+    });
+
+    const {status, data} = response;
+    return res.status(status).send(data);
+  }
+
+  async updateLocation(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const {id} = req.params;
+
+    if (!id) return res.status(400).send({error: 'Dog walker não encontrado'});
+
+    const {longitude, latitude} = req.body;
+
+    if (!longitude || !latitude)
+      return res.status(400).send({error: 'Requisição inválida'});
+
+    const response = await DogWalkerRepository.addLocationToDogWalker({
+      walkerId: id,
+      longitude,
+      latitude,
     });
 
     const {status, data} = response;
