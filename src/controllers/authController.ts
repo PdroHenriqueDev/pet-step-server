@@ -2,6 +2,8 @@ import {Request, Response} from 'express';
 import {ApiResponse} from '../interfaces/apitResponse';
 import AuthRepository from '../repositories/authRepository';
 import {isEmailValid} from '../utils/validateEmail';
+import jwt, {JwtPayload} from 'jsonwebtoken';
+import {generateAccessToken, generateRefreshToken} from '../utils/authToken';
 
 class AuthController {
   async login(req: Request, res: Response): Promise<Response<ApiResponse>> {
@@ -48,6 +50,48 @@ class AuthController {
 
     const {status, data} = response;
     return res.status(status).send(data);
+  }
+
+  async refreshToken(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const {refreshToken} = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).send({
+        status: 400,
+        data: 'Refresh token é obrigatório.',
+      });
+    }
+
+    try {
+      const user = jwt.verify(
+        refreshToken,
+        process.env.JWT_REFRESH_SECRET!,
+      ) as JwtPayload;
+
+      if (!user) {
+        return res.status(403).send({
+          status: 403,
+          data: 'Token inválido ou expirado',
+        });
+      }
+
+      const accessToken = generateAccessToken(user.id);
+      const newRefreshToken = generateRefreshToken(user.id);
+
+      return res.status(200).json({
+        status: 200,
+        data: {accessToken, refreshToken: newRefreshToken},
+      });
+    } catch (error) {
+      console.log('Error ao renovar token', error);
+      return res.status(403).send({
+        status: 403,
+        data: 'Token expirado ou inválido',
+      });
+    }
   }
 }
 
