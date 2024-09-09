@@ -1,4 +1,6 @@
 import stripePackage from 'stripe';
+import fs from 'fs';
+import path from 'path';
 
 class StripUtils {
   get stripe() {
@@ -46,11 +48,13 @@ class StripUtils {
     customerStripeId,
     defaultPayment,
     requestId,
+    dogWalkerStripeAccountId,
   }: {
     valueInCents: number;
     customerStripeId: string;
     defaultPayment: string;
     requestId: string;
+    dogWalkerStripeAccountId: string;
   }) {
     const paymentIntent = await this.stripe.paymentIntents.create({
       amount: valueInCents,
@@ -60,6 +64,10 @@ class StripUtils {
       off_session: true,
       confirm: true,
       description: requestId,
+      transfer_data: {
+        destination: dogWalkerStripeAccountId,
+      },
+      application_fee_amount: Math.round(valueInCents * 0.3),
     });
 
     return paymentIntent;
@@ -69,6 +77,167 @@ class StripUtils {
     const result = await this.stripe.paymentMethods.detach(paymentMethodId);
 
     return result;
+  }
+
+  async createAccount({
+    email,
+    firstName,
+    lastName,
+    dob,
+    address,
+    documentId,
+    reqIp,
+    idNumber,
+    phone,
+  }: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    dob: {
+      day: number;
+      month: number;
+      year: number;
+    };
+    address: {
+      city?: string;
+      country?: string;
+      line1?: string;
+      line2?: string;
+      postal_code?: string;
+      state?: string;
+    };
+    documentId?: string;
+    reqIp: string;
+    idNumber: string;
+    phone: string;
+  }) {
+    const result = await this.stripe.accounts.create({
+      type: 'custom',
+      country: 'BR',
+      email,
+      capabilities: {
+        card_payments: {requested: true},
+        transfers: {requested: true},
+      },
+      business_type: 'individual',
+      individual: {
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        dob,
+        address: address,
+        verification: {
+          document: {
+            front: documentId,
+          },
+        },
+        id_number: idNumber,
+        phone,
+        political_exposure: 'none',
+      },
+      tos_acceptance: {
+        date: Math.floor(Date.now() / 1000),
+        ip: reqIp,
+      },
+      business_profile: {
+        mcc: '7299',
+        product_description: 'Serviço de dog walking',
+      },
+    });
+
+    return result;
+  }
+
+  async accountRequirements(accountId: string) {
+    const account = await this.stripe.accounts.retrieve(accountId);
+
+    const requirements = account.requirements?.currently_due;
+
+    return requirements;
+  }
+
+  async uploadDocument(accountId: string) {
+    const filePath = path.resolve(
+      __dirname,
+      '../../fileStripeTest/success.png',
+    );
+
+    const file = await this.stripe.files.create(
+      {
+        purpose: 'identity_document',
+        file: {
+          data: fs.readFileSync(filePath),
+          name: 'file_name.jpg',
+          type: 'application/octet-stream',
+        },
+      },
+      {
+        stripeAccount: accountId,
+      },
+    );
+
+    const updatedAccount = await this.stripe.accounts.update(accountId, {
+      individual: {
+        verification: {
+          document: {
+            front: file.id,
+          },
+        },
+      },
+    });
+
+    return updatedAccount;
+  }
+
+  async addExternalAccount({
+    accountId,
+    name,
+    lastName,
+    bankCode,
+    accountNumber,
+  }: {
+    accountId: string;
+    name: string;
+    lastName: string;
+    bankCode: string;
+    accountNumber: string;
+  }) {
+    const updatedAccount = await this.stripe.accounts.update(accountId, {
+      external_account: {
+        object: 'bank_account',
+        country: 'BR',
+        currency: 'BRL',
+        account_holder_name: `${name} ${lastName}`,
+        account_holder_type: 'individual',
+        routing_number: bankCode,
+        account_number: accountNumber,
+      },
+    });
+
+    return updatedAccount;
+  }
+
+  async balance(accountId: string) {
+    const balance = await this.stripe.balance.retrieve({
+      stripeAccount: accountId,
+    });
+    return balance;
+  }
+
+  async balanceTransactions(accountId: string) {
+    const transactions = await this.stripe.balanceTransactions.list({
+      stripeAccount: accountId,
+    });
+
+    return transactions;
+  }
+
+  async transfers(accountId: string) {
+    const transfers = await this.stripe.transfers.list({
+      stripeAccount: accountId,
+    });
+
+    return transfers;
   }
 }
 

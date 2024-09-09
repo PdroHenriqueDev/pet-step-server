@@ -4,12 +4,14 @@ import {authenticateToken} from '../middleware/authenticateToken';
 
 const dogWalkerRouter = express.Router();
 
-dogWalkerRouter.get('/nearest', authenticateToken, DogWalker.nearests);
-dogWalkerRouter.get('/recommended', authenticateToken, DogWalker.recommeded);
+dogWalkerRouter.get('/nearest', DogWalker.nearests);
+dogWalkerRouter.get('/recommended', DogWalker.recommeded);
 dogWalkerRouter.get('/:id', authenticateToken, DogWalker.findById);
 
 // dogWalkerRouter.post('/:id', DogWalker.notification);
-dogWalkerRouter.post('/:id/feedback', authenticateToken, DogWalker.feedback);
+dogWalkerRouter.post('/:id/feedback', DogWalker.feedback);
 dogWalkerRouter.post('/', DogWalker.store);
+
+dogWalkerRouter.put('/update-location/:id', DogWalker.updateLocation);
 
 export default dogWalkerRouter;

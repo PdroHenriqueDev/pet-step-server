@@ -5,6 +5,7 @@ export interface DogWalkerProps {
   name: string;
   lastName: string;
   email?: string;
+  phone: string;
   address: {
     zipCode: string;
     street: string;

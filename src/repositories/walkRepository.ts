@@ -289,7 +289,7 @@ class WalkRepository {
         };
       }
 
-      const {calculation, status} = requestRide;
+      const {calculation, status, dogWalker} = requestRide;
 
       if (
         status === RideEvents.ACCEPTED_SUCCESSFULLY ||
@@ -323,6 +323,8 @@ class WalkRepository {
 
       const {totalCost} = costDetails;
 
+      const {stripeAccountId} = dogWalker;
+
       const valueInCents = Math.round(totalCost * 100);
 
       const paymentStatus = await StripeUtils.handlePayment({
@@ -330,6 +332,7 @@ class WalkRepository {
         valueInCents,
         customerStripeId: customerStripe.id,
         defaultPayment,
+        dogWalkerStripeAccountId: stripeAccountId,
       });
 
       if (

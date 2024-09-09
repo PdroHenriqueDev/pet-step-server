@@ -7,6 +7,7 @@ import stripePackage from 'stripe';
 import {SocketInit} from '../websocket/testClas';
 import {RepositoryResponse} from '../interfaces/apitResponse';
 import {hash, genSalt} from 'bcrypt';
+import StripeUtils from '../utils/stripe';
 
 class DogWalkerRepository {
   get db() {
@@ -43,11 +44,15 @@ class DogWalkerRepository {
 
   currentDate = new Date();
 
-  async addDogWalker(dogWalker: DogWalkerProps): Promise<RepositoryResponse> {
+  async addDogWalker(
+    dogWalker: DogWalkerProps,
+    reqIp: string,
+  ): Promise<RepositoryResponse> {
     try {
       // collection.createIndex({ location: "2dsphere" })
 
-      const {password, email, document} = dogWalker;
+      const {password, email, document, name, lastName, address, phone} =
+        dogWalker;
 
       const dogWalkerExists = await this.dogWalkersCollection.findOne({
         $or: [{email}, {document}],
@@ -60,12 +65,36 @@ class DogWalkerRepository {
         };
       }
 
+      const createStripeAccount = await StripeUtils.createAccount({
+        email: email as string,
+        firstName: name,
+        lastName,
+        dob: {
+          day: 20,
+          month: 10,
+          year: 1999,
+        },
+        address: {
+          city: address.city,
+          country: 'BR',
+          state: address.state,
+          postal_code: address.zipCode,
+          line1: address.street,
+        },
+        reqIp,
+        idNumber: String(document),
+        phone,
+      });
+
+      const {id: stripeAccountId} = createStripeAccount;
+
       const salt = await genSalt();
       const hashedPassword = await hash(password!, salt);
 
       const newDogWalker = {
         ...dogWalker,
         password: hashedPassword,
+        stripeAccountId,
         rate: 5,
         totalRatings: 0,
         isOnline: false,
@@ -96,21 +125,23 @@ class DogWalkerRepository {
     walkerId: string;
     longitude: number;
     latitude: number;
-  }) {
+  }): Promise<RepositoryResponse> {
     try {
+      // this.dogWalkersCollection.createIndex({location: '2dsphere'});
+
       const location = {
         type: 'Point',
         coordinates: [longitude, latitude],
       };
 
-      const result = await this.dogWalkersCollection.updateOne(
+      await this.dogWalkersCollection.updateOne(
         {_id: new ObjectId(walkerId)},
         {$set: {location, updatedAt: new Date()}},
       );
 
       return {
         status: 200,
-        data: result,
+        data: 'Localização atualizada',
       };
     } catch (error) {
       console.error('Error adding location:', error);

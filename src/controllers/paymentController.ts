@@ -84,6 +84,162 @@ class PaymentController {
       return res.status(500).send('Error');
     }
   }
+
+  async listAccountRequirements(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const {accountId} = req.params;
+    if (!accountId) return res.status(400).send('Requisição inválida');
+    try {
+      const list = await StripeUtils.accountRequirements(accountId);
+
+      const response = {
+        status: 200,
+        data: list,
+      };
+
+      const {status, data} = response;
+
+      return res.status(status).send(data);
+    } catch (error) {
+      console.log('Error ao listar :', error);
+      return res.status(500).send('Error');
+    }
+  }
+
+  async uploadAccountDocument(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const {accountId} = req.params;
+    if (!accountId) return res.status(400).send('Requisição inválida');
+    try {
+      await StripeUtils.uploadDocument(accountId);
+
+      const response = {
+        status: 200,
+        data: 'Documento enviado',
+      };
+
+      const {status, data} = response;
+
+      return res.status(status).send(data);
+    } catch (error) {
+      console.log('Erro uploading document:', error);
+      return res.status(500).send('Error');
+    }
+  }
+
+  async accountBalance(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const {accountId} = req.params;
+    if (!accountId) return res.status(400).send('Requisição inválida');
+    try {
+      const balance = await StripeUtils.balance(accountId);
+
+      const response = {
+        status: 200,
+        data: balance,
+      };
+
+      const {status, data} = response;
+
+      return res.status(status).send(data);
+    } catch (error) {
+      console.log('Error ao mostrar saldo :', error);
+      return res.status(500).send('Error');
+    }
+  }
+
+  async accountBalanceTransactions(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const {accountId} = req.params;
+    if (!accountId) return res.status(400).send('Requisição inválida');
+    try {
+      const transactions = await StripeUtils.balanceTransactions(accountId);
+
+      const response = {
+        status: 200,
+        data: transactions,
+      };
+
+      const {status, data} = response;
+
+      return res.status(status).send(data);
+    } catch (error) {
+      console.log('Error ao mostrar transações:', error);
+      return res.status(500).send('Error');
+    }
+  }
+
+  async accountTransfers(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const {accountId} = req.params;
+    if (!accountId) return res.status(400).send('Requisição inválida');
+    try {
+      const transfers = await StripeUtils.transfers(accountId);
+
+      const response = {
+        status: 200,
+        data: transfers,
+      };
+
+      const {status, data} = response;
+
+      return res.status(status).send(data);
+    } catch (error) {
+      console.log('Error ao mostrar transferências:', error);
+      return res.status(500).send('Error');
+    }
+  }
+
+  async addExternalAccount(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const {accountId} = req.params;
+    if (!accountId) return res.status(400).send('Requisição inválida');
+
+    const {name, lastName, bankCode, accountNumber} = req.body;
+
+    const requiredFields = ['name', 'lastName', 'bankCode', 'accountNumber'];
+    const missingField = requiredFields.find(field => !req.body[field]);
+
+    if (missingField) {
+      return res
+        .status(400)
+        .send({error: `O campo "${missingField}" é obrigatório.`});
+    }
+
+    try {
+      await StripeUtils.addExternalAccount({
+        accountId,
+        name,
+        lastName,
+        bankCode,
+        accountNumber,
+      });
+
+      const response = {
+        status: 200,
+        data: 'Conta adicionada',
+      };
+
+      const {status, data} = response;
+
+      return res.status(status).send(data);
+    } catch (error) {
+      console.log('Error ao mostrar transferências:', error);
+      return res.status(500).send('Error');
+    }
+  }
 }
 
 export default new PaymentController();
