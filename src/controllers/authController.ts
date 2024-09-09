@@ -93,6 +93,27 @@ class AuthController {
       });
     }
   }
+
+  async resetPassword(req: Request, res: Response): Promise<Response> {
+    const {token, newPassword, role} = req.body;
+
+    if (!token || !newPassword || !role) {
+      return res.status(400).send({
+        status: 400,
+        data: 'Requisição inválida',
+      });
+    }
+
+    const response = await AuthRepository.resetPassoword({
+      token,
+      newPassword,
+      role,
+    });
+
+    const {status, data} = response;
+
+    return res.status(status).send(data);
+  }
 }
 
 export default new AuthController();

@@ -1,9 +1,11 @@
-import {compare} from 'bcrypt';
+import {compare, hash} from 'bcrypt';
 import MongoConnection from '../database/mongoConnection';
 import {UserRole} from '../enums/role';
 import {generateAccessToken, generateRefreshToken} from '../utils/authToken';
 import {RepositoryResponse} from '../interfaces/apitResponse';
 import {sendPasswordResetEmail} from '../utils/sendPasswordResetEmail';
+import jwt, {JwtPayload} from 'jsonwebtoken';
+import {ObjectId} from 'mongodb';
 
 class AuthRepository {
   get db() {
@@ -91,17 +93,77 @@ class AuthRepository {
 
       const resetToken = generateAccessToken(user._id);
 
-      await sendPasswordResetEmail(email, resetToken);
+      const emailResult = await sendPasswordResetEmail({
+        to: email,
+        token: resetToken,
+        role,
+      });
+
+      const {status, data} = emailResult;
 
       return {
-        status: 200,
-        data: 'Um e-mail de recuperação foi enviado com sucesso.',
+        status: status,
+        data,
       };
     } catch (error) {
       console.log('Erro ao enviar o email de recuperação de senha', error);
       return {
         status: 500,
         data: 'Erro interno ao tentar recuperar senha',
+      };
+    }
+  }
+
+  async resetPassoword({
+    newPassword,
+    token,
+    role,
+  }: {
+    newPassword: string;
+    token: string;
+    role: UserRole;
+  }) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+
+      if (!decoded) {
+        return {
+          status: 400,
+          data: 'Token inválido ou expirado.',
+        };
+      }
+
+      const userId = decoded.id;
+
+      const collection =
+        role === UserRole.DogWalker
+          ? this.dogWalkersCollection
+          : this.ownerCollection;
+      const user = await collection.findOne({_id: new ObjectId(userId)});
+
+      if (!user) {
+        return {
+          status: 404,
+          data: 'Usuário não encontrado.',
+        };
+      }
+
+      const hashedPassword = await hash(newPassword, 10);
+
+      await collection.updateOne(
+        {_id: new ObjectId(userId)},
+        {$set: {password: hashedPassword}},
+      );
+
+      return {
+        status: 200,
+        data: 'Senha redefinida com sucesso.',
+      };
+    } catch (error) {
+      console.error('Erro ao redefinir senha:', error);
+      return {
+        status: 500,
+        data: 'Erro ao redefinir senha.',
       };
     }
   }

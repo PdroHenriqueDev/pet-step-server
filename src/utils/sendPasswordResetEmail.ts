@@ -1,5 +1,6 @@
 import AWS from 'aws-sdk';
 import dotenv from 'dotenv';
+import {UserRole} from '../enums/role';
 
 dotenv.config();
 
@@ -9,8 +10,16 @@ const ses = new AWS.SES({
   secretAccessKey: process.env?.AWS_SECRET_ACCESS_KEY,
 });
 
-export async function sendPasswordResetEmail(to: string, token: string) {
-  const resetLink = `https://yourapp.com/reset-password?token=${token}`;
+export async function sendPasswordResetEmail({
+  to,
+  token,
+  role,
+}: {
+  to: string;
+  token: string;
+  role: UserRole;
+}) {
+  const resetLink = `${process.env?.PET_STEP_FRONT}/reset-password?token=${token}&role=${role}`;
 
   const params = {
     Source: 'noreply@petstepapp.com',
@@ -35,8 +44,8 @@ export async function sendPasswordResetEmail(to: string, token: string) {
   };
 
   try {
-    const test = await ses.sendEmail(params).promise();
-    console.log('got here', test);
+    await ses.sendEmail(params).promise();
+
     return {
       status: 200,
       data: 'Email enviado com sucesso',

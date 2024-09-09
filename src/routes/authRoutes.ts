@@ -1,9 +1,10 @@
 import express from 'express';
 import AuthController from '../controllers/authController';
 
-const dogWalkerRouter = express.Router();
+const authRouter = express.Router();
 
-dogWalkerRouter.post('/login', AuthController.login);
-dogWalkerRouter.post('/recovery-password', AuthController.forgotPassword);
+authRouter.post('/login', AuthController.login);
+authRouter.post('/recovery-password', AuthController.forgotPassword);
+authRouter.post('/reset-password', AuthController.resetPassword);
 
-export default dogWalkerRouter;
+export default authRouter;
