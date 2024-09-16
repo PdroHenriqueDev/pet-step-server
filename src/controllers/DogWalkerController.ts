@@ -20,7 +20,7 @@ class DogWalker {
     if (missingField) {
       return res
         .status(400)
-        .send({error: `O campo "${missingField}" é obrigatório.`});
+        .send({data: `O campo "${missingField}" é obrigatório.`});
     }
 
     const {

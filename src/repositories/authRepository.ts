@@ -124,7 +124,10 @@ class AuthRepository {
     role: UserRole;
   }) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET_ACCESS_TOKEN!,
+      ) as JwtPayload;
 
       if (!decoded) {
         return {

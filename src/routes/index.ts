@@ -4,6 +4,7 @@ import ownerRoutes from './ownerRoutes';
 import paymentRoutes from './paymentRoute';
 import walkRoutes from './walkRoutes';
 import authRoutes from './authRoutes';
+import applicationRoutes from './application';
 
 const router = express.Router();
 
@@ -16,5 +17,6 @@ router.use('/owner', ownerRoutes);
 router.use('/payment', paymentRoutes);
 router.use('/walk', walkRoutes);
 router.use('/auth', authRoutes);
+router.use('/application', applicationRoutes);
 
 export default router;

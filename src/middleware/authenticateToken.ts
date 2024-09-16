@@ -13,16 +13,16 @@ export function authenticateToken(
     return res.status(401).json({data: 'Token não fornecido'});
   }
 
-  jwt.verify(token, process.env.JWT_SECRET!, (err, decoded) => {
+  jwt.verify(token, process.env.JWT_SECRET_ACCESS_TOKEN!, (err, decoded) => {
     if (err) {
-      return res.status(403).json({data: 'Token inválido ou expirado'});
+      return res.status(401).json({data: 'Token inválido ou expirado'});
     }
 
     if (typeof decoded === 'object' && decoded !== null && 'id' in decoded) {
       req.user = decoded as JwtPayload & {id: string};
-      next();
+      return next();
     }
 
-    return res.status(403).json({data: 'Token inválido'});
+    return res.status(401).json({data: 'Token inválido'});
   });
 }

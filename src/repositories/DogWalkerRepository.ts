@@ -8,6 +8,7 @@ import {SocketInit} from '../websocket/testClas';
 import {RepositoryResponse} from '../interfaces/apitResponse';
 import {hash, genSalt} from 'bcrypt';
 import StripeUtils from '../utils/stripe';
+import {DogWalkerApplicationStatus} from '../enums/dogWalkerApplicationStatus';
 
 class DogWalkerRepository {
   get db() {
@@ -98,6 +99,7 @@ class DogWalkerRepository {
         rate: 5,
         totalRatings: 0,
         isOnline: false,
+        status: DogWalkerApplicationStatus.PendingDocuments,
         createdAt: this.currentDate,
         updatedAt: this.currentDate,
       };

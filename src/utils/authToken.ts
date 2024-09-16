@@ -5,7 +5,9 @@ import {ObjectId} from 'mongodb';
 dotenv.config();
 
 export function generateAccessToken(userId: ObjectId) {
-  return jwt.sign({id: userId}, process.env.JWT_SECRET!, {expiresIn: '1h'});
+  return jwt.sign({id: userId}, process.env.JWT_SECRET_ACCESS_TOKEN!, {
+    expiresIn: '1h',
+  });
 }
 
 export function generateRefreshToken(userId: ObjectId) {
