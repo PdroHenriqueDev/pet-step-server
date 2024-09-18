@@ -256,9 +256,12 @@ class DogWalkerRepository {
 
   async findDogWalkerById(id: string) {
     try {
-      const dogWalker = await this.dogWalkersCollection.findOne({
-        _id: new ObjectId(id),
-      });
+      const dogWalker = await this.dogWalkersCollection.findOne(
+        {
+          _id: new ObjectId(id),
+        },
+        {projection: {password: 0}},
+      );
 
       if (!dogWalker) {
         return {

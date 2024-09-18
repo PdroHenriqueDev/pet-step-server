@@ -30,14 +30,14 @@ class AuthRepository {
     role: UserRole;
   }): Promise<RepositoryResponse> {
     try {
-      const user =
+      const collection =
         role === UserRole.DogWalker
-          ? await this.dogWalkersCollection.findOne({
-              email,
-            })
-          : await this.ownerCollection.findOne({
-              email,
-            });
+          ? this.dogWalkersCollection
+          : this.ownerCollection;
+
+      const user = await collection.findOne({
+        email,
+      });
 
       if (!user) {
         return {
@@ -46,7 +46,7 @@ class AuthRepository {
         };
       }
 
-      const {password: hashPassword} = user;
+      const {password: hashPassword, ...userWithoutPassword} = user;
 
       const isPasswordValid = await compare(password, hashPassword);
 
@@ -62,7 +62,7 @@ class AuthRepository {
 
       return {
         status: 200,
-        data: {accessToken, refreshToken},
+        data: {accessToken, refreshToken, user: userWithoutPassword},
       };
     } catch (error) {
       console.log('Algo de errado ao fazer logion:', error);
