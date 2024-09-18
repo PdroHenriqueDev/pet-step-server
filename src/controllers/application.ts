@@ -56,36 +56,32 @@ class ApplicationController {
     req: Request,
     res: Response,
   ): Promise<Response<ApiResponse>> {
-    const token = req.headers.authorization?.split(' ')[1];
+    const response = await ApplicationRepository.verifyDocuments(req.user.id);
 
-    try {
-      if (!token) {
-        return res.status(400).send({status: 400, data: 'Requisição inválida'});
-      }
+    const {status, data} = response;
+    return res.status(status).send(data);
+  }
 
-      const user = jwt.verify(
-        token,
-        process.env.JWT_SECRET_ACCESS_TOKEN!,
-      ) as JwtPayload;
+  async aboutMe(req: Request, res: Response): Promise<Response<ApiResponse>> {
+    const {aboutMe} = req.body;
+    console.log('pegou aqui', aboutMe);
 
-      if (!user) {
-        return res.status(401).send({
-          status: 401,
-          data: 'Token inválido ou expirado',
-        });
-      }
-
-      const response = await ApplicationRepository.verifyDocuments(user.id);
-
-      const {status, data} = response;
-      return res.status(status).send(data);
-    } catch (error) {
-      console.log('Error verifying documents', error);
-      return res.status(500).send({
-        status: 500,
-        data: 'Erro ao verificar documentos',
+    if (!aboutMe || aboutMe.length > 600) {
+      return res.status(400).send({
+        data: !aboutMe
+          ? 'Campo sobre mim obrigatório'
+          : 'O campo sobre mim deve ter no máximo 600 caracteres',
+        statu: 400,
       });
     }
+
+    const response = await ApplicationRepository.aboutMeDogWalker(
+      req.user.id,
+      aboutMe,
+    );
+
+    const {status, data} = response;
+    return res.status(status).send(data);
   }
 }
 

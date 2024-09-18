@@ -19,5 +19,6 @@ authRouter.post(
   upload.single('document'),
   ApplicationController.sendDocuments,
 );
+authRouter.post('/about-me', authenticateToken, ApplicationController.aboutMe);
 
 export default authRouter;

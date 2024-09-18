@@ -111,6 +111,34 @@ class ApplicationRepository {
     );
   }
 
+  async aboutMeDogWalker(
+    dogwalkerId: string,
+    aboutMe: string,
+  ): Promise<RepositoryResponse> {
+    try {
+      await this.dogWalkerApplicationCollection.updateOne(
+        {dogWalkerId: new ObjectId(dogwalkerId)},
+        {
+          $set: {
+            aboutMe,
+            updatedAt: this.currentDate,
+          },
+        },
+      );
+
+      return {
+        status: 200,
+        data: 'Enviado com sucesso',
+      };
+    } catch (error) {
+      console.log('Error sending about me field', error);
+      return {
+        status: 500,
+        data: 'Erro ao enviar o campo sobre mim',
+      };
+    }
+  }
+
   async verifyDocuments(dogwalkerId: string): Promise<RepositoryResponse> {
     try {
       const application = await this.dogWalkerApplicationCollection.findOne({
@@ -139,6 +167,7 @@ class ApplicationRepository {
         selfie: !!application.documents?.selfie,
         residence: !!application.documents?.residence,
         criminalRecord: !!application.documents?.criminalRecord,
+        aboutMe: !!application.aboutMe,
       };
 
       const allDocumentsSent = Object.values(documentStatus).every(
