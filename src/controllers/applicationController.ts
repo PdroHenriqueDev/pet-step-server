@@ -1,6 +1,6 @@
 import {Request, Response} from 'express';
 import {ApiResponse} from '../interfaces/apitResponse';
-import ApplicationRepository from '../repositories/application';
+import ApplicationRepository from '../repositories/applicationRepository';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 
 class ApplicationController {
