@@ -82,6 +82,22 @@ class ApplicationController {
     const {status, data} = response;
     return res.status(status).send(data);
   }
+
+  async updateApplication(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const {dogWalkerId} = req.params;
+    const {statusApplication} = req.body;
+
+    const response = await ApplicationRepository.updateStatus(
+      dogWalkerId,
+      statusApplication,
+    );
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
 }
 
 export default new ApplicationController();

@@ -21,4 +21,10 @@ authRouter.post(
 );
 authRouter.post('/about-me', authenticateToken, ApplicationController.aboutMe);
 
+authRouter.put(
+  '/status/:dogWalkerId',
+  authenticateToken,
+  ApplicationController.updateApplication,
+);
+
 export default authRouter;

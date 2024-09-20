@@ -177,7 +177,10 @@ class ApplicationRepository {
         status => status === true,
       );
 
-      if (allDocumentsSent) {
+      if (
+        allDocumentsSent &&
+        application.status === DogWalkerApplicationStatus.PendingDocuments
+      ) {
         await Promise.all([
           this.dogWalkerApplicationCollection.updateOne(
             {dogWalkerId: new ObjectId(dogwalkerId)},
@@ -219,6 +222,58 @@ class ApplicationRepository {
         data: 'Erro interno',
       };
     }
+  }
+
+  async updateStatus(
+    dogwalkerId: string,
+    status: DogWalkerApplicationStatus,
+  ): Promise<RepositoryResponse> {
+    if (!Object.values(DogWalkerApplicationStatus).includes(status)) {
+      return {
+        status: 400,
+        data: 'Status inválido',
+      };
+    }
+
+    const application = await this.dogWalkerApplicationCollection.findOne({
+      dogWalkerId: new ObjectId(dogwalkerId),
+    });
+
+    const dogWalker = await this.dogWalkersCollection.findOne({
+      _id: new ObjectId(dogwalkerId),
+    });
+
+    if (!application || !dogWalker)
+      return {
+        status: 400,
+        data: 'Aplicação não encontrada',
+      };
+
+    await Promise.all([
+      this.dogWalkerApplicationCollection.updateOne(
+        {dogWalkerId: new ObjectId(dogwalkerId)},
+        {
+          $set: {
+            status,
+            updatedAt: this.currentDate,
+          },
+        },
+      ),
+      this.dogWalkersCollection.updateOne(
+        {_id: new ObjectId(dogwalkerId)},
+        {
+          $set: {
+            status,
+            updatedAt: this.currentDate,
+          },
+        },
+      ),
+    ]);
+
+    return {
+      status: 200,
+      data: 'Atualizado com sucesso',
+    };
   }
 }
 
