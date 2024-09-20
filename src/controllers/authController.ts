@@ -74,7 +74,7 @@ class AuthController {
       if (!user) {
         return res.status(403).send({
           status: 403,
-          data: 'Token inválido ou expirado',
+          data: 'Faça login novamente',
         });
       }
 

@@ -10,12 +10,12 @@ export function authenticateToken(
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({data: 'Token não fornecido'});
+    return res.status(401).json({data: 'Faça login novamente'});
   }
 
   jwt.verify(token, process.env.JWT_SECRET_ACCESS_TOKEN!, (err, decoded) => {
     if (err) {
-      return res.status(401).json({data: 'Token inválido ou expirado'});
+      return res.status(401).json({data: 'Faça login novamente'});
     }
 
     if (typeof decoded === 'object' && decoded !== null && 'id' in decoded) {
@@ -23,6 +23,6 @@ export function authenticateToken(
       return next();
     }
 
-    return res.status(401).json({data: 'Token inválido'});
+    return res.status(401).json({data: 'Faça login novamente'});
   });
 }

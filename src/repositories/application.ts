@@ -2,7 +2,10 @@ import {ObjectId} from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
 import {RepositoryResponse} from '../interfaces/apitResponse';
 import {uploadToS3} from '../utils/uploadImage';
-import {DocumentReviewStatus} from '../enums/dogWalkerApplicationStatus';
+import {
+  DocumentReviewStatus,
+  DogWalkerApplicationStatus,
+} from '../enums/dogWalkerApplicationStatus';
 import {DocumentType} from '../types/document';
 
 class ApplicationRepository {
@@ -174,6 +177,29 @@ class ApplicationRepository {
         status => status === true,
       );
 
+      if (allDocumentsSent) {
+        await Promise.all([
+          this.dogWalkerApplicationCollection.updateOne(
+            {dogWalkerId: new ObjectId(dogwalkerId)},
+            {
+              $set: {
+                status: DogWalkerApplicationStatus.PendingReview,
+                updatedAt: this.currentDate,
+              },
+            },
+          ),
+          this.dogWalkersCollection.updateOne(
+            {dogWalkerId: new ObjectId(dogwalkerId)},
+            {
+              $set: {
+                status: DogWalkerApplicationStatus.PendingReview,
+                updatedAt: this.currentDate,
+              },
+            },
+          ),
+        ]);
+      }
+
       const response = {
         status: 200,
         data: {
@@ -184,7 +210,10 @@ class ApplicationRepository {
 
       return response;
     } catch (error) {
-      console.log(`Error verifying document ${dogwalkerId}:`, error);
+      console.log(
+        `Internal error while verifying documents ${dogwalkerId}:`,
+        error,
+      );
       return {
         status: 500,
         data: 'Erro interno',

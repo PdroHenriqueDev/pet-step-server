@@ -132,7 +132,7 @@ class AuthRepository {
       if (!decoded) {
         return {
           status: 400,
-          data: 'Token inválido ou expirado.',
+          data: 'Faça login novamente',
         };
       }
 

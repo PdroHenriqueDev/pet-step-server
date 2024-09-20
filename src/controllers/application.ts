@@ -31,7 +31,7 @@ class ApplicationController {
       if (!user) {
         return res.status(401).send({
           status: 401,
-          data: 'Token inválido ou expirado',
+          data: 'Faça login novamente',
         });
       }
 
@@ -64,7 +64,6 @@ class ApplicationController {
 
   async aboutMe(req: Request, res: Response): Promise<Response<ApiResponse>> {
     const {aboutMe} = req.body;
-    console.log('pegou aqui', aboutMe);
 
     if (!aboutMe || aboutMe.length > 600) {
       return res.status(400).send({
