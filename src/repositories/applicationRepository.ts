@@ -189,7 +189,7 @@ class ApplicationRepository {
             },
           ),
           this.dogWalkersCollection.updateOne(
-            {dogWalkerId: new ObjectId(dogwalkerId)},
+            {_id: new ObjectId(dogwalkerId)},
             {
               $set: {
                 status: DogWalkerApplicationStatus.PendingReview,
