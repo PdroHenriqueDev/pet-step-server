@@ -7,6 +7,7 @@ import {
   DogWalkerApplicationStatus,
 } from '../enums/dogWalkerApplicationStatus';
 import {DocumentType} from '../types/document';
+import {DogWalkerProfile} from '../interfaces/application';
 
 class ApplicationRepository {
   get db() {
@@ -24,47 +25,54 @@ class ApplicationRepository {
   currentDate = new Date();
 
   async addDocument(
-    dogwalkerId: string,
+    dogWalkerId: string,
     documentType: DocumentType,
     file: Express.Multer.File,
   ): Promise<RepositoryResponse> {
     try {
-      const applicationExists =
-        await this.dogWalkerApplicationCollection.findOne({
-          dogWalkerId: new ObjectId(dogwalkerId),
-        });
-
       const documentUrl = 'url-some-place';
 
       // const fileType = file.mimetype.split('/')[1];
       // const documentUrl = await uploadToS3(file.buffer, fileType);
 
-      if (applicationExists) {
-        await this.updateDogWalkerDocument(
-          dogwalkerId,
-          documentType,
-          documentUrl,
-        );
+      // const data = {
+      //   documents: {
+      //     [documentType]: {
+      //       path: documentUrl,
+      //       status: DocumentReviewStatus.Pending,
+      //     },
+      //   },
+      //   updatedAt: this.currentDate,
+      // };
 
-        return {
-          status: 200,
-          data: `Documento ${documentType} atualizado com sucesso`,
-        };
-      }
+      const documentData = {
+        path: documentUrl,
+        status: DocumentReviewStatus.Pending,
+      };
 
-      await this.createDogWalkerApplication(
-        dogwalkerId,
-        documentType,
-        documentUrl,
+      await this.dogWalkerApplicationCollection.updateOne(
+        {
+          dogWalkerId: new ObjectId(dogWalkerId),
+        },
+        {
+          $set: {
+            [`documents.${documentType}`]: documentData,
+            updatedAt: this.currentDate,
+          },
+          $setOnInsert: {
+            createdAt: this.currentDate,
+          },
+        },
+        {upsert: true},
       );
 
       return {
         status: 200,
-        data: `Aplicação criada e documento ${documentType} enviado com sucesso`,
+        data: 'Documento enviado com sucesso',
       };
     } catch (error) {
       console.log(
-        `Erro ao processar o documento do tipo ${documentType} para o Dog Walker ID ${dogwalkerId}:`,
+        `Erro ao processar o documento do tipo ${documentType} para o Dog Walker ID ${dogWalkerId}:`,
         error,
       );
       return {
@@ -74,59 +82,20 @@ class ApplicationRepository {
     }
   }
 
-  private async createDogWalkerApplication(
-    dogwalkerId: string,
-    documentType: DocumentType,
-    documentUrl: string,
-  ) {
-    const data = {
-      dogWalkerId: new ObjectId(dogwalkerId),
-      documents: {
-        [documentType]: {
-          path: documentUrl,
-          status: DocumentReviewStatus.Pending,
-        },
-      },
-      createdAt: this.currentDate,
-      updatedAt: this.currentDate,
-    };
-
-    await this.dogWalkerApplicationCollection.insertOne(data);
-  }
-
-  private async updateDogWalkerDocument(
-    dogwalkerId: string,
-    documentType: DocumentType,
-    documentUrl: string,
-  ) {
-    const updateField = `documents.${documentType}`;
-    await this.dogWalkerApplicationCollection.updateOne(
-      {dogWalkerId: new ObjectId(dogwalkerId)},
-      {
-        $set: {
-          [updateField]: {
-            path: documentUrl,
-            status: DocumentReviewStatus.Pending,
-          },
-          updatedAt: this.currentDate,
-        },
-      },
-    );
-  }
-
   async aboutMeDogWalker(
-    dogwalkerId: string,
+    dogWalkerId: string,
     aboutMe: string,
   ): Promise<RepositoryResponse> {
     try {
       await this.dogWalkerApplicationCollection.updateOne(
-        {dogWalkerId: new ObjectId(dogwalkerId)},
+        {dogWalkerId: new ObjectId(dogWalkerId)},
         {
           $set: {
             aboutMe,
             updatedAt: this.currentDate,
           },
         },
+        {upsert: true},
       );
 
       return {
@@ -138,6 +107,43 @@ class ApplicationRepository {
       return {
         status: 500,
         data: 'Erro ao enviar o campo sobre mim',
+      };
+    }
+  }
+
+  async addProfile({
+    dogWalkerId,
+    transport,
+    availability,
+    dogExperience,
+  }: DogWalkerProfile): Promise<RepositoryResponse> {
+    try {
+      const profile = {
+        transport,
+        availability,
+        dogExperience,
+      };
+
+      await this.dogWalkerApplicationCollection.updateOne(
+        {dogWalkerId: new ObjectId(dogWalkerId)},
+        {
+          $set: {
+            profile,
+            updatedAt: this.currentDate,
+          },
+        },
+        {upsert: true},
+      );
+
+      return {
+        status: 200,
+        data: 'Enviado com sucesso',
+      };
+    } catch (error) {
+      console.log('Error sending about me field', error);
+      return {
+        status: 500,
+        data: 'Erro ao enviar o profile',
       };
     }
   }
@@ -158,6 +164,7 @@ class ApplicationRepository {
               selfie: false,
               residence: false,
               criminalRecord: false,
+              profile: false,
             },
           },
         };
@@ -171,6 +178,7 @@ class ApplicationRepository {
         residence: !!application.documents?.residence,
         criminalRecord: !!application.documents?.criminalRecord,
         aboutMe: !!application.aboutMe,
+        profile: !!application.profile,
       };
 
       const allDocumentsSent = Object.values(documentStatus).every(
@@ -274,6 +282,42 @@ class ApplicationRepository {
       status: 200,
       data: 'Atualizado com sucesso',
     };
+  }
+
+  async deactivateAccount(dogwalkerId: string): Promise<RepositoryResponse> {
+    try {
+      await Promise.all([
+        this.dogWalkerApplicationCollection.updateOne(
+          {dogWalkerId: new ObjectId(dogwalkerId)},
+          {
+            $set: {
+              status: DogWalkerApplicationStatus.Deactivated,
+              updatedAt: this.currentDate,
+            },
+          },
+        ),
+        this.dogWalkersCollection.updateOne(
+          {_id: new ObjectId(dogwalkerId)},
+          {
+            $set: {
+              status: DogWalkerApplicationStatus.Deactivated,
+              updatedAt: this.currentDate,
+            },
+          },
+        ),
+      ]);
+
+      return {
+        status: 200,
+        data: 'Conta e aplicação desativadas com sucesso',
+      };
+    } catch (error) {
+      console.log('Erro ao desativar conta e aplicação', error);
+      return {
+        status: 500,
+        data: 'Erro ao desativar conta e aplicação',
+      };
+    }
   }
 }
 

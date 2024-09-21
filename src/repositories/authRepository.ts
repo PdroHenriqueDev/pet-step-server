@@ -6,6 +6,7 @@ import {RepositoryResponse} from '../interfaces/apitResponse';
 import {sendPasswordResetEmail} from '../utils/sendPasswordResetEmail';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 import {ObjectId} from 'mongodb';
+import {DogWalkerApplicationStatus} from '../enums/dogWalkerApplicationStatus';
 
 class AuthRepository {
   get db() {
@@ -19,6 +20,12 @@ class AuthRepository {
   get ownerCollection() {
     return this.db.collection('owner');
   }
+
+  get dogWalkerApplicationCollection() {
+    return this.db.collection('dogWalkerApplication');
+  }
+
+  currentDate = new Date();
 
   async auth({
     email,
@@ -47,6 +54,34 @@ class AuthRepository {
       }
 
       const {password: hashPassword, ...userWithoutPassword} = user;
+
+      if (user.status === DogWalkerApplicationStatus.Deactivated) {
+        await Promise.all([
+          this.dogWalkerApplicationCollection.updateOne(
+            {dogWalkerId: new ObjectId(user._id)},
+            {
+              $set: {
+                status: DogWalkerApplicationStatus.PendingDocuments,
+                updatedAt: this.currentDate,
+              },
+            },
+          ),
+          this.dogWalkersCollection.updateOne(
+            {_id: new ObjectId(user._id)},
+            {
+              $set: {
+                status: DogWalkerApplicationStatus.PendingDocuments,
+                updatedAt: this.currentDate,
+              },
+            },
+          ),
+        ]);
+
+        const updatedUser = await collection.findOne({email});
+        if (updatedUser) {
+          userWithoutPassword.status = updatedUser.status;
+        }
+      }
 
       const isPasswordValid = await compare(password, hashPassword);
 

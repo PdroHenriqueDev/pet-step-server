@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import {ApiResponse} from '../interfaces/apitResponse';
 import ApplicationRepository from '../repositories/applicationRepository';
 import jwt, {JwtPayload} from 'jsonwebtoken';
+import {Availability, DogExperience, Transport} from '../types/application';
 
 class ApplicationController {
   async sendDocuments(
@@ -83,6 +84,44 @@ class ApplicationController {
     return res.status(status).send(data);
   }
 
+  async profile(req: Request, res: Response): Promise<Response<ApiResponse>> {
+    const {availability, transport, dogExperience} = req.body;
+    console.log('got here profile', {availability, transport, dogExperience});
+    const validAvailability: Availability[] = [
+      'everyDay',
+      'occasionally',
+      'weekends',
+    ];
+    const validTransport: Transport[] = [
+      'carMotorcycle',
+      'bicycle',
+      'onFoot',
+      'rideSharing',
+    ];
+    const validDogExperience: DogExperience[] = ['allDogs', 'calmDogs'];
+
+    if (
+      !validAvailability.includes(availability) ||
+      !validTransport.includes(transport) ||
+      !validDogExperience.includes(dogExperience)
+    ) {
+      return res.status(400).send({
+        data: 'Requisição inválida',
+        statu: 400,
+      });
+    }
+
+    const response = await ApplicationRepository.addProfile({
+      dogWalkerId: req.user.id,
+      availability,
+      transport,
+      dogExperience,
+    });
+
+    const {status, data} = response;
+    return res.status(status).send(data);
+  }
+
   async updateApplication(
     req: Request,
     res: Response,
@@ -96,6 +135,15 @@ class ApplicationController {
     );
 
     const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async deactivateAccount(req: Request, res: Response): Promise<Response> {
+    const userId = req.user.id;
+
+    const response = await ApplicationRepository.deactivateAccount(userId);
+    const {status} = response;
+
     return res.status(status).send(response);
   }
 }

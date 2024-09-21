@@ -3,28 +3,42 @@ import multer from 'multer';
 import ApplicationController from '../controllers/applicationController';
 import {authenticateToken} from '../middleware/authenticateToken';
 
-const authRouter = express.Router();
+const applicationRouter = express.Router();
 
 const upload = multer({storage: multer.memoryStorage()});
 
-authRouter.get(
+applicationRouter.get(
   '/documents-status',
   authenticateToken,
   ApplicationController.documentsStatus,
 );
 
-authRouter.post(
+applicationRouter.post(
   '/upload-document',
   authenticateToken,
   upload.single('document'),
   ApplicationController.sendDocuments,
 );
-authRouter.post('/about-me', authenticateToken, ApplicationController.aboutMe);
+applicationRouter.post(
+  '/about-me',
+  authenticateToken,
+  ApplicationController.aboutMe,
+);
+applicationRouter.post(
+  '/profile',
+  authenticateToken,
+  ApplicationController.profile,
+);
+applicationRouter.post(
+  '/deactivate-account',
+  authenticateToken,
+  ApplicationController.deactivateAccount,
+);
 
-authRouter.put(
+applicationRouter.put(
   '/status/:dogWalkerId',
   authenticateToken,
   ApplicationController.updateApplication,
 );
 
-export default authRouter;
+export default applicationRouter;

@@ -24,9 +24,8 @@ class AuthController {
     }
 
     const response = await AuthRepository.auth({email, password, role});
-
-    const {status, data} = response;
-    return res.status(status).send(data);
+    const {status} = response;
+    return res.status(status).send(response);
   }
 
   async forgotPassword(req: Request, res: Response): Promise<Response> {
