@@ -5,6 +5,8 @@ import paymentRoutes from './paymentRoute';
 import walkRoutes from './walkRoutes';
 import authRoutes from './authRoutes';
 import applicationRoutes from './applicationRoutes';
+import notificationRoutes from './notificationRoutes';
+import {authenticateToken} from '../middleware/authenticateToken';
 
 const router = express.Router();
 
@@ -18,5 +20,6 @@ router.use('/payment', paymentRoutes);
 router.use('/walk', walkRoutes);
 router.use('/auth', authRoutes);
 router.use('/application', applicationRoutes);
+router.use('/notification', authenticateToken, notificationRoutes);
 
 export default router;

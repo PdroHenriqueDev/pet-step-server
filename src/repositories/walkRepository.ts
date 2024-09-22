@@ -174,12 +174,12 @@ class WalkRepository {
 
       const requestId = requestRideCollection.insertedId;
 
-      const {token} = dogWalkerResult.data as any;
+      const {deviceToken} = dogWalkerResult.data as any;
 
       const result = await NotificatinUtils.sendNotification({
         title: 'Passeio',
         body: 'Aceita o passeio?',
-        token,
+        token: deviceToken,
       });
 
       if (result.status !== 200) {

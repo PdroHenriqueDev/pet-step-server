@@ -372,6 +372,29 @@ class DogWalkerRepository {
       };
     }
   }
+
+  async updateDeviceToken(
+    walkerId: string,
+    deviceToken: string,
+  ): Promise<RepositoryResponse> {
+    try {
+      await this.dogWalkersCollection.updateOne(
+        {_id: new ObjectId(walkerId)},
+        {$set: {deviceToken, updatedAt: this.currentDate}},
+      );
+
+      return {
+        status: 200,
+        data: 'Token atualizado',
+      };
+    } catch (error) {
+      console.error('Error adding device token:', error);
+      return {
+        status: 500,
+        data: 'Error interno',
+      };
+    }
+  }
 }
 
 export default new DogWalkerRepository();

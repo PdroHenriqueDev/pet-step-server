@@ -86,7 +86,6 @@ class ApplicationController {
 
   async profile(req: Request, res: Response): Promise<Response<ApiResponse>> {
     const {availability, transport, dogExperience} = req.body;
-    console.log('got here profile', {availability, transport, dogExperience});
     const validAvailability: Availability[] = [
       'everyDay',
       'occasionally',
