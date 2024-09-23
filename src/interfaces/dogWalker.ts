@@ -19,4 +19,5 @@ export interface DogWalkerProps {
   distance?: string;
   birthdate: string;
   isOnline?: boolean;
+  stripeAccountId?: string;
 }
