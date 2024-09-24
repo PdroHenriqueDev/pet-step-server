@@ -138,7 +138,7 @@ class DogWalkerRepository {
 
       await this.dogWalkersCollection.updateOne(
         {_id: new ObjectId(walkerId)},
-        {$set: {location, updatedAt: new Date()}},
+        {$set: {location, updatedAt: this.currentDate}},
       );
 
       return {
@@ -150,6 +150,52 @@ class DogWalkerRepository {
       return {
         status: 500,
         data: 'Error',
+      };
+    }
+  }
+
+  async updateOnlineStatus({
+    dogWalkerId,
+    isOnline,
+    longitude,
+    latitude,
+  }: {
+    dogWalkerId: string;
+    isOnline: boolean;
+    longitude: string;
+    latitude: string;
+  }): Promise<RepositoryResponse> {
+    try {
+      const updateFields: {
+        isOnline: boolean;
+        updatedAt: Date;
+        location?: {type: string; coordinates: string[]};
+      } = {
+        isOnline,
+        updatedAt: this.currentDate,
+      };
+
+      if (isOnline) {
+        updateFields.location = {
+          type: 'Point',
+          coordinates: [longitude, latitude],
+        };
+      }
+
+      await this.dogWalkersCollection.updateOne(
+        {_id: new ObjectId(dogWalkerId)},
+        {$set: updateFields},
+      );
+
+      return {
+        status: 200,
+        data: 'Status online atualizado com sucesso',
+      };
+    } catch (error) {
+      console.log('Error updating status online:', error);
+      return {
+        status: 500,
+        data: 'Error interno ao atualizar status online',
       };
     }
   }

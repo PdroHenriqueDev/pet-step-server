@@ -93,8 +93,8 @@ class DogWalker {
 
     const response = await DogWalkerRepository.findDogWalkerById(id);
 
-    const {status, data} = response;
-    return res.status(status).send(data);
+    const {status} = response;
+    return res.status(status).send(response);
   }
 
   // async notification(req: Request, res: Response) {
@@ -160,6 +160,34 @@ class DogWalker {
 
     const {status, data} = response;
     return res.status(status).send(data);
+  }
+
+  async updateAvailability(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const userId = req.user?.id;
+
+    if (!userId)
+      return res.status(400).send({data: 'Dog walker não encontrado'});
+
+    const {isOnline, longitude, latitude} = req.body;
+
+    if (typeof isOnline !== 'boolean')
+      return res.status(400).send({data: 'Requisição inválida'});
+
+    if (isOnline === true && (!longitude || !latitude))
+      return res.status(400).send({data: 'Requisição inválida'});
+
+    const response = await DogWalkerRepository.updateOnlineStatus({
+      dogWalkerId: userId,
+      isOnline,
+      longitude,
+      latitude,
+    });
+
+    const {status} = response;
+    return res.status(status).send(response);
   }
 }
 

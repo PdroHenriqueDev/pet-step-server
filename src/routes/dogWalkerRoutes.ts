@@ -12,6 +12,15 @@ dogWalkerRouter.get('/:id', authenticateToken, DogWalker.findById);
 dogWalkerRouter.post('/:id/feedback', DogWalker.feedback);
 dogWalkerRouter.post('/', DogWalker.store);
 
-dogWalkerRouter.put('/update-location/:id', DogWalker.updateLocation);
+dogWalkerRouter.put(
+  '/update-location/:id',
+  authenticateToken,
+  DogWalker.updateLocation,
+);
+dogWalkerRouter.put(
+  '/update-availability',
+  authenticateToken,
+  DogWalker.updateAvailability,
+);
 
 export default dogWalkerRouter;
