@@ -8,7 +8,7 @@ dogWalkerRouter.get('/nearest', DogWalker.nearests);
 dogWalkerRouter.get('/recommended', DogWalker.recommeded);
 dogWalkerRouter.get('/:id', authenticateToken, DogWalker.findById);
 
-// dogWalkerRouter.post('/:id', DogWalker.notification);
+dogWalkerRouter.post('/accept-terms', authenticateToken, DogWalker.acceptTerm);
 dogWalkerRouter.post('/:id/feedback', DogWalker.feedback);
 dogWalkerRouter.post('/', DogWalker.store);
 

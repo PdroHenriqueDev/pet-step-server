@@ -189,6 +189,21 @@ class DogWalker {
     const {status} = response;
     return res.status(status).send(response);
   }
+
+  async acceptTerm(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const userId = req.user?.id;
+
+    if (!userId)
+      return res.status(400).send({data: 'Dog walker não encontrado'});
+
+    const response = await DogWalkerRepository.termsAcceptance(userId);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
 }
 
 export default new DogWalker();

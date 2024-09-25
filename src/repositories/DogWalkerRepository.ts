@@ -441,6 +441,35 @@ class DogWalkerRepository {
       };
     }
   }
+
+  async termsAcceptance(dogwalkerId: string): Promise<RepositoryResponse> {
+    try {
+      this.dogWalkersCollection.updateOne(
+        {_id: new ObjectId(dogwalkerId)},
+        {
+          $set: {
+            status: DogWalkerApplicationStatus.Approved,
+            termsAccepted: {
+              version: '1.0',
+              acceptedAt: this.currentDate,
+            },
+            updatedAt: this.currentDate,
+          },
+        },
+      );
+
+      return {
+        status: 200,
+        data: 'Termo aceito com sucesso',
+      };
+    } catch (error) {
+      console.log('Error accepting term: ', error);
+      return {
+        status: 500,
+        data: 'Erro interno',
+      };
+    }
+  }
 }
 
 export default new DogWalkerRepository();

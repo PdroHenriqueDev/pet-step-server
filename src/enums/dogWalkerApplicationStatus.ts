@@ -4,6 +4,7 @@ export enum DogWalkerApplicationStatus {
   Approved = 'approved',
   Rejected = 'rejected',
   Deactivated = 'deactivated',
+  PendingTerms = 'pendingTerms',
 }
 
 export enum DocumentReviewStatus {
