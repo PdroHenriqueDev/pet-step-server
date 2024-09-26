@@ -5,11 +5,11 @@ import {Owner} from '../interfaces/owner';
 import DogWalkerRepository from './dogWalkerRepository';
 import {calculateWalkCost} from '../utils/calculateWalkCost';
 import {RideEvents} from '../enums/ride';
-// import FirebaseRepository from './firebaseRepository';
 import {SocketInit} from '../websocket/testClas';
 import {RepositoryResponse} from '../interfaces/apitResponse';
 import {WalkProps} from '../interfaces/walk';
 import NotificatinUtils from '../utils/notification';
+import {DogWalkerProps} from '../interfaces/dogWalker';
 
 class WalkRepository {
   get db() {
@@ -125,6 +125,7 @@ class WalkRepository {
         await DogWalkerRepository.calculationRequestCollection.findOne({
           _id: new ObjectId(calculationId),
         });
+
       if (!calculation) {
         return {
           status: 404,
@@ -134,17 +135,26 @@ class WalkRepository {
 
       const {dogWalkerId, ownerId} = calculation;
 
-      const dogWalkerResult =
-        await DogWalkerRepository.findDogWalkerById(dogWalkerId);
+      const dogWalker = await this.dogWalkersCollection.findOne({
+        _id: new ObjectId(dogWalkerId),
+      });
 
-      const {status, data: dogWalker} = dogWalkerResult;
-
-      if (status !== 200 || !dogWalker) {
+      if (!dogWalker) {
         return {
           status: 404,
           data: 'Dog walker não encontrado',
         };
       }
+
+      const {currentWalk: dogWalkerIsBusy} = dogWalker;
+
+      if (dogWalkerIsBusy) {
+        return {
+          status: 409,
+          data: 'Dog walker não está mais disponível',
+        };
+      }
+
       const owner = await this.ownerCollection.findOne<Owner>({
         _id: new ObjectId(ownerId),
       });
@@ -160,26 +170,69 @@ class WalkRepository {
 
       if (currentWalk) {
         return {
-          status: 400,
+          status: 409,
           data: 'Já tem um passeio em andamento',
         };
       }
 
+      const {costDetails, receivedLocation} = calculation;
+
+      const TAX_PERCENTAGE = 0.3;
+
+      const totalCost = costDetails.totalCost;
+      const serviceFee = parseFloat((totalCost * TAX_PERCENTAGE).toFixed(2));
+      const finalCost = parseFloat((totalCost - serviceFee).toFixed(2));
+
+      const durationMinutes = costDetails.walkPrice.durationMinutes;
+      const numberOfDogs = costDetails.dogPrice.numberOfDogs;
+
+      const displayData = {
+        dogWalker: {
+          _id: dogWalkerId,
+          name: dogWalker.name,
+          rate: dogWalker.rate,
+        },
+        owner: {
+          _id: ownerId,
+          name: owner.name,
+          rate: owner.rate,
+        },
+        walk: {
+          totalCost,
+          serviceFee: TAX_PERCENTAGE,
+          finalCost,
+          durationMinutes,
+          numberOfDogs,
+          receivedLocation,
+        },
+      };
+
       const requestRideCollection = await this.requestRideCollection.insertOne({
-        calculation,
-        dogWalker,
+        calculationId: calculation._id,
+        displayData,
+        status: RideEvents.PENDING,
         createdAt: this.currentDate,
         updatedAt: this.currentDate,
       });
 
       const requestId = requestRideCollection.insertedId;
 
-      const {deviceToken} = dogWalkerResult.data as any;
+      const {deviceToken} = dogWalker as DogWalkerProps;
+
+      if (!deviceToken) {
+        return {
+          status: 500,
+          data: 'Não conseguimos notificar o Dog Walker',
+        };
+      }
 
       const result = await NotificatinUtils.sendNotification({
-        title: 'Passeio',
-        body: 'Aceita o passeio?',
+        title: 'Novo Passeio Disponível!',
+        body: 'Você recebeu uma solicitação de passeio. Aceita o passeio?',
         token: deviceToken,
+        data: {
+          requestId: requestId.toString(),
+        },
       });
 
       if (result.status !== 200) {
@@ -198,18 +251,32 @@ class WalkRepository {
         };
       }
 
-      const updateResult = await this.ownerCollection.updateOne(
-        {_id: new ObjectId(ownerId)},
-        {
-          $set: {
-            currentWalk: {
-              requestId,
-              status: RideEvents.PENDING,
+      const updateResults = await Promise.all([
+        this.ownerCollection.updateOne(
+          {_id: new ObjectId(ownerId)},
+          {
+            $set: {
+              currentWalk: {
+                requestId,
+                status: RideEvents.PENDING,
+              },
             },
           },
-        },
-      );
-      if (updateResult.modifiedCount === 0) {
+        ),
+        this.dogWalkersCollection.updateOne(
+          {_id: new ObjectId(dogWalkerId)},
+          {
+            $set: {
+              currentWalk: {
+                requestId,
+                status: RideEvents.PENDING,
+              },
+            },
+          },
+        ),
+      ]);
+
+      if (updateResults.some(result => result.modifiedCount === 0)) {
         return {
           status: 500,
           data: 'Não foi possível solicitar o passeio.',
@@ -487,6 +554,70 @@ class WalkRepository {
       return {
         status: 200,
         data: responses,
+      };
+    } catch (error) {
+      console.error('Erro ao listar solicitação:', error);
+      return {
+        status: 500,
+        data: 'Erro interno do servidor',
+      };
+    }
+  }
+
+  async cancelWalk(requestId: string): Promise<RepositoryResponse> {
+    try {
+      const request = await this.requestRideCollection.findOne({
+        _id: new ObjectId(requestId),
+      });
+
+      if (!request || request?.status === RideEvents.CANCELLED) {
+        return {
+          status: 400,
+          data: !request
+            ? 'Solicitação não encontrada.'
+            : 'Solicitação já cancelada',
+        };
+      }
+
+      const {owner, dogWalker} = request.displayData;
+
+      if (!owner || !dogWalker) {
+        return {
+          status: 400,
+          data: 'Informações de proprietário ou passeador estão ausentes.',
+        };
+      }
+
+      await Promise.all([
+        this.requestRideCollection.updateOne(
+          {_id: new ObjectId(requestId)},
+          {
+            $set: {
+              status: RideEvents.CANCELLED,
+            },
+          },
+        ),
+        this.dogWalkersCollection.updateOne(
+          {_id: new ObjectId(dogWalker._id)},
+          {
+            $set: {
+              currentWalk: null,
+            },
+          },
+        ),
+        this.ownerCollection.updateOne(
+          {_id: new ObjectId(owner._id)},
+          {
+            $set: {
+              currentWalk: null,
+            },
+          },
+        ),
+      ]);
+
+      return {
+        status: 200,
+        data: 'Solicitação cancelada.',
       };
     } catch (error) {
       console.error('Erro ao listar solicitação:', error);

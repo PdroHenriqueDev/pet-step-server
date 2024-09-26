@@ -100,8 +100,8 @@ class WalkController {
 
     const response = await WalkRepository.getRequestById(requestId);
 
-    const {status, data} = response;
-    return res.status(status).send(data);
+    const {status} = response;
+    return res.status(status).send(response);
   }
 
   async walkData(req: Request, res: Response) {
@@ -130,6 +130,19 @@ class WalkController {
 
     const {status, data} = response;
     return res.status(status).send(data);
+  }
+
+  async cancel(req: Request, res: Response): Promise<Response<ApiResponse>> {
+    const {requestId} = req.params;
+
+    if (!requestId) {
+      return res.status(400).send({status: 400, data: 'Requisição inválida'});
+    }
+
+    const response = await WalkRepository.cancelWalk(requestId);
+
+    const {status} = response;
+    return res.status(status).send(response);
   }
 }
 

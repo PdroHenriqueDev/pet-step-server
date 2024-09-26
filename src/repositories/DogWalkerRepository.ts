@@ -316,9 +316,19 @@ class DogWalkerRepository {
         };
       }
 
+      const data = dogWalker?.location
+        ? {
+            ...dogWalker,
+            location: {
+              longitude: dogWalker.location.coordinates[0],
+              latitude: dogWalker.location.coordinates[1],
+            },
+          }
+        : dogWalker;
+
       return {
         status: 200,
-        data: dogWalker,
+        data,
       };
     } catch (error) {
       console.log('Error finding dog walker:', error);

@@ -23,11 +23,11 @@ export const calculateWalkCost = ({
   const totalCost = numberOfDogs * DOG_PRICE_PER_DOG + walkPrice;
 
   return {
-    totalCost: totalCost.toFixed(2),
+    totalCost: parseFloat(totalCost.toFixed(2)),
     dogPrice: {
       numberOfDogs,
       pricePerDog: DOG_PRICE_PER_DOG,
-      totalDogCost: (numberOfDogs * DOG_PRICE_PER_DOG).toFixed(2),
+      totalDogCost: parseFloat((numberOfDogs * DOG_PRICE_PER_DOG).toFixed(2)),
     },
     walkPrice: {
       durationMinutes: walkDurationMinutes,

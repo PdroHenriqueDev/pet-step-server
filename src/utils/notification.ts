@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import serviceAccount from '../../firebase-admin.config.json';
+import {ObjectId} from 'mongodb';
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
@@ -10,10 +11,14 @@ class NotificationUtils {
     title,
     body,
     token,
+    data,
   }: {
     title: string;
     body: string;
     token: string;
+    data?: {
+      requestId?: string;
+    };
   }): Promise<{status: number; data: string}> {
     const message: admin.messaging.Message = {
       notification: {
@@ -21,8 +26,14 @@ class NotificationUtils {
         body,
       },
       token,
+      data: {
+        requestId: data?.requestId ?? '',
+      },
       android: {
         priority: 'high',
+        notification: {
+          color: '#F7CE45',
+        },
       },
       apns: {
         payload: {
