@@ -31,6 +31,10 @@ class DogWalkerRepository {
     return this.db.collection('requestRide');
   }
 
+  get dogWalkerApplicationCollection() {
+    return this.db.collection('dogWalkerApplication');
+  }
+
   get stripe() {
     return new stripePackage(process.env?.STRIPE_SECRET_KEY ?? '');
   }
@@ -454,19 +458,30 @@ class DogWalkerRepository {
 
   async termsAcceptance(dogwalkerId: string): Promise<RepositoryResponse> {
     try {
-      this.dogWalkersCollection.updateOne(
-        {_id: new ObjectId(dogwalkerId)},
-        {
-          $set: {
-            status: DogWalkerApplicationStatus.Approved,
-            termsAccepted: {
-              version: '1.0',
-              acceptedAt: this.currentDate,
+      await Promise.all([
+        this.dogWalkersCollection.updateOne(
+          {_id: new ObjectId(dogwalkerId)},
+          {
+            $set: {
+              status: DogWalkerApplicationStatus.Approved,
+              termsAccepted: {
+                version: '1.0',
+                acceptedAt: this.currentDate,
+              },
+              updatedAt: this.currentDate,
             },
-            updatedAt: this.currentDate,
           },
-        },
-      );
+        ),
+        this.dogWalkerApplicationCollection.updateOne(
+          {dogWalkerId: new ObjectId(dogwalkerId)},
+          {
+            $set: {
+              status: DogWalkerApplicationStatus.Approved,
+              updatedAt: this.currentDate,
+            },
+          },
+        ),
+      ]);
 
       return {
         status: 200,

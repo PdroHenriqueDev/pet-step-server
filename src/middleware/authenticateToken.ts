@@ -19,7 +19,7 @@ export function authenticateToken(
     }
 
     if (typeof decoded === 'object' && decoded !== null && 'id' in decoded) {
-      req.user = decoded as JwtPayload & {id: string};
+      req.user = decoded as JwtPayload & {id: string; role: string};
       return next();
     }
 

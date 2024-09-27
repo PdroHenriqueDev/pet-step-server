@@ -92,8 +92,8 @@ class AuthRepository {
         };
       }
 
-      const accessToken = generateAccessToken(user._id);
-      const refreshToken = generateRefreshToken(user._id);
+      const accessToken = generateAccessToken(user._id, role);
+      const refreshToken = generateRefreshToken(user._id, role);
 
       return {
         status: 200,
@@ -126,7 +126,7 @@ class AuthRepository {
         };
       }
 
-      const resetToken = generateAccessToken(user._id);
+      const resetToken = generateAccessToken(user._id, role);
 
       const emailResult = await sendPasswordResetEmail({
         to: email,

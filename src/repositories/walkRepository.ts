@@ -10,6 +10,8 @@ import {RepositoryResponse} from '../interfaces/apitResponse';
 import {WalkProps} from '../interfaces/walk';
 import NotificatinUtils from '../utils/notification';
 import {DogWalkerProps} from '../interfaces/dogWalker';
+import {UserRole} from '../enums/role';
+import {SocketResponse} from '../enums/socketResponse';
 
 class WalkRepository {
   get db() {
@@ -111,7 +113,8 @@ class WalkRepository {
         status: 200,
         data: request,
       };
-    } catch (err) {
+    } catch (error) {
+      console.log('Error calculating walk:', error);
       return {
         status: 500,
         data: 'Error',
@@ -306,7 +309,7 @@ class WalkRepository {
 
     this.socket.publishEventToRoom(
       requestId,
-      'dog_walker_response',
+      SocketResponse.DogWalker,
       RideEvents.INVALID_REQUEST,
     );
   }
@@ -318,12 +321,16 @@ class WalkRepository {
 
     if (!requestRide) return;
 
-    const {calculation} = requestRide;
-    const {ownerId} = calculation;
+    const {displayData} = requestRide;
+    const {owner, dogWalker} = displayData;
 
     await Promise.all([
       this.ownerCollection.updateOne(
-        {_id: new ObjectId(ownerId as string)},
+        {_id: new ObjectId(owner._id as string)},
+        {$set: {currentWalk: null}},
+      ),
+      this.dogWalkersCollection.updateOne(
+        {_id: new ObjectId(dogWalker._id as string)},
         {$set: {currentWalk: null}},
       ),
       this.requestRideCollection.updateOne(
@@ -332,7 +339,7 @@ class WalkRepository {
       ),
     ]);
 
-    this.socket.publishEventToRoom(requestId, 'dog_walker_response', status);
+    this.socket.publishEventToRoom(requestId, SocketResponse.DogWalker, status);
   }
 
   async acceptRide(requestId: string): Promise<RepositoryResponse> {
@@ -346,7 +353,7 @@ class WalkRepository {
 
         this.socket.publishEventToRoom(
           requestId,
-          'dog_walker_response',
+          SocketResponse.DogWalker,
           RideEvents.INVALID_REQUEST,
         );
 
@@ -356,7 +363,7 @@ class WalkRepository {
         };
       }
 
-      const {calculation, status, dogWalker} = requestRide;
+      const {status, displayData} = requestRide;
 
       if (
         status === RideEvents.ACCEPTED_SUCCESSFULLY ||
@@ -371,13 +378,13 @@ class WalkRepository {
         };
       }
 
-      const {ownerId, costDetails} = calculation;
+      const {dogWalker, owner, walk} = displayData;
 
-      const owner = await this.ownerCollection.findOne({
-        _id: new ObjectId(ownerId as string),
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(owner._id as string),
       });
 
-      if (!owner) {
+      if (!ownerExists) {
         await this.handleInvalidRideRequest(requestId);
 
         return {
@@ -386,11 +393,22 @@ class WalkRepository {
         };
       }
 
-      const {customerStripe, defaultPayment} = owner;
+      const dogWalkerExists = await this.dogWalkersCollection.findOne({
+        _id: new ObjectId(dogWalker._id as string),
+      });
 
-      const {totalCost} = costDetails;
+      if (!dogWalkerExists) {
+        await this.handleInvalidRideRequest(requestId);
 
-      const {stripeAccountId} = dogWalker;
+        return {
+          status: 404,
+          data: 'Requisição inválida',
+        };
+      }
+
+      const {customerStripe, defaultPayment} = ownerExists;
+      const {stripeAccountId} = dogWalkerExists;
+      const {totalCost} = walk;
 
       const valueInCents = Math.round(totalCost * 100);
 
@@ -412,13 +430,13 @@ class WalkRepository {
         );
 
         await this.ownerCollection.updateOne(
-          {_id: new ObjectId(ownerId as string)},
+          {_id: new ObjectId(owner._id as string)},
           {$set: {currentWalk: null}},
         );
 
         this.socket.publishEventToRoom(
           requestId,
-          'dog_walker_response',
+          SocketResponse.DogWalker,
           RideEvents.PAYMENT_FAILURE,
         );
 
@@ -428,23 +446,38 @@ class WalkRepository {
         };
       }
 
-      await this.requestRideCollection.updateOne(
-        {_id: new ObjectId(requestId)},
-        {$set: {status: RideEvents.ACCEPTED_SUCCESSFULLY}},
-      );
-
-      await this.ownerCollection.updateOne(
-        {_id: new ObjectId(ownerId)},
-        {
-          $set: {
-            currentWalk: {requestId, status: RideEvents.ACCEPTED_SUCCESSFULLY},
+      await Promise.all([
+        this.requestRideCollection.updateOne(
+          {_id: new ObjectId(requestId)},
+          {$set: {status: RideEvents.ACCEPTED_SUCCESSFULLY}},
+        ),
+        this.ownerCollection.updateOne(
+          {_id: new ObjectId(owner._id)},
+          {
+            $set: {
+              currentWalk: {
+                requestId,
+                status: RideEvents.ACCEPTED_SUCCESSFULLY,
+              },
+            },
           },
-        },
-      );
+        ),
+        this.dogWalkersCollection.updateOne(
+          {_id: new ObjectId(dogWalker._id)},
+          {
+            $set: {
+              currentWalk: {
+                requestId,
+                status: RideEvents.ACCEPTED_SUCCESSFULLY,
+              },
+            },
+          },
+        ),
+      ]);
 
       this.socket.publishEventToRoom(
         requestId,
-        'dog_walker_response',
+        SocketResponse.DogWalker,
         RideEvents.ACCEPTED_SUCCESSFULLY,
       );
 
@@ -564,7 +597,10 @@ class WalkRepository {
     }
   }
 
-  async cancelWalk(requestId: string): Promise<RepositoryResponse> {
+  async cancelWalk(
+    requestId: string,
+    role: UserRole,
+  ): Promise<RepositoryResponse> {
     try {
       const request = await this.requestRideCollection.findOne({
         _id: new ObjectId(requestId),
@@ -615,12 +651,20 @@ class WalkRepository {
         ),
       ]);
 
+      this.socket.publishEventToRoom(
+        requestId,
+        role === UserRole.DogWalker
+          ? SocketResponse.DogWalker
+          : SocketResponse.Owner,
+        RideEvents.CANCELLED,
+      );
+
       return {
         status: 200,
         data: 'Solicitação cancelada.',
       };
     } catch (error) {
-      console.error('Erro ao listar solicitação:', error);
+      console.error('Erro ao cancelar solicitação:', error);
       return {
         status: 500,
         data: 'Erro interno do servidor',

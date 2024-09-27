@@ -55,12 +55,14 @@ class AuthController {
     req: Request,
     res: Response,
   ): Promise<Response<ApiResponse>> {
-    const {refreshToken} = req.body;
+    const {refreshToken, role} = req.body;
 
-    if (!refreshToken) {
+    if (!refreshToken || !role) {
       return res.status(400).send({
         status: 400,
-        data: 'Refresh token é obrigatório.',
+        data: !refreshToken
+          ? 'Refresh token é obrigatório.'
+          : 'Requisição inválida',
       });
     }
 
@@ -71,14 +73,15 @@ class AuthController {
       ) as JwtPayload;
 
       if (!user) {
+        console.log('goth here !user');
         return res.status(403).send({
           status: 403,
           data: 'Faça login novamente',
         });
       }
 
-      const accessToken = generateAccessToken(user.id);
-      const newRefreshToken = generateRefreshToken(user.id);
+      const accessToken = generateAccessToken(user.id, role);
+      const newRefreshToken = generateRefreshToken(user.id, role);
 
       return res.status(200).json({
         status: 200,

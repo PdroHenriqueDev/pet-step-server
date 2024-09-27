@@ -1,4 +1,5 @@
 import {Server, Socket} from 'socket.io';
+import {SocketResponse} from '../enums/socketResponse';
 
 export class SocketInit {
   private static instance: SocketInit;
@@ -18,12 +19,11 @@ export class SocketInit {
         console.log(`User joined room: ${roomId}`);
       }
 
-      socket.on('dog_walker_location', data => {
-        console.log('Received location data:', data);
+      socket.on(SocketResponse.DogWalkerLocation, data => {
         const requestId = socket.handshake.query?.request_id as string;
         if (requestId) {
           const {longitude, latitude} = data;
-          this.publishEventToRoom(requestId, 'dog_walker_location', {
+          this.publishEventToRoom(requestId, SocketResponse.DogWalkerLocation, {
             longitude,
             latitude,
           });
@@ -62,7 +62,7 @@ export class SocketInit {
       latitude += 0.0001;
       longitude += 0.0001;
 
-      socket.emit('dog_walker_location', {latitude, longitude});
+      socket.emit(SocketResponse.DogWalkerLocation, {latitude, longitude});
       console.log('Enviando coordenadas:', {latitude, longitude});
 
       if (latitude >= -23.5485 || longitude >= -46.6313) {
