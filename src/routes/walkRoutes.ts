@@ -10,6 +10,7 @@ dogWalkerRouter.get('/:requestId', WalkController.walkData);
 dogWalkerRouter.post('/calculate-cost', WalkController.calculateCost);
 dogWalkerRouter.post('/request/:calculationId', WalkController.requestWalk);
 dogWalkerRouter.post('/accept/:requestId', WalkController.acceptRide);
+dogWalkerRouter.post('/start/:requestId', WalkController.start);
 
 dogWalkerRouter.delete('/deny/:requestId', WalkController.deny);
 dogWalkerRouter.delete('/cancel/:requestId', WalkController.cancel);

@@ -693,12 +693,23 @@ class WalkRepository {
         _id: new ObjectId(requestId),
       });
 
-      if (!request || request?.status === WalkEvents.CANCELLED) {
+      if (!request) {
         return {
           status: 400,
-          data: !request
-            ? 'Solicitação não encontrada.'
-            : 'Solicitação já cancelada.',
+          data: 'Solicitação não encontrada.',
+        };
+      }
+
+      if (
+        request?.status === WalkEvents.CANCELLED ||
+        request?.status === WalkEvents.IN_PROGRESS
+      ) {
+        return {
+          status: 400,
+          data:
+            request?.status === WalkEvents.CANCELLED
+              ? 'Solicitação já cancelada.'
+              : 'Não é possível cancelar um passeio em andamento.',
         };
       }
 
@@ -773,6 +784,82 @@ class WalkRepository {
       };
     } catch (error) {
       console.log('Erro ao cancelar passeio:', error);
+      return {
+        status: 500,
+        data: 'Erro interno do servidor',
+      };
+    }
+  }
+
+  async startWalk(
+    requestId: string,
+    role: UserRole,
+  ): Promise<RepositoryResponse> {
+    try {
+      const request = await this.requestRideCollection.findOne({
+        _id: new ObjectId(requestId),
+      });
+
+      if (!request || request?.status !== WalkEvents.ACCEPTED_SUCCESSFULLY) {
+        return {
+          status: 400,
+          data: !request
+            ? 'Solicitação não encontrada.'
+            : 'Solicitação não pode ser aceita.',
+        };
+      }
+
+      const {displayData} = request;
+
+      const {owner, dogWalker} = displayData;
+
+      await Promise.all([
+        this.requestRideCollection.updateOne(
+          {_id: new ObjectId(requestId)},
+          {
+            $set: {
+              status: WalkEvents.IN_PROGRESS,
+            },
+          },
+        ),
+        this.dogWalkersCollection.updateOne(
+          {_id: new ObjectId(dogWalker._id)},
+          {
+            $set: {
+              currentWalk: {
+                requestId,
+                status: WalkEvents.IN_PROGRESS,
+              },
+            },
+          },
+        ),
+        this.ownerCollection.updateOne(
+          {_id: new ObjectId(owner._id)},
+          {
+            $set: {
+              currentWalk: {
+                requestId,
+                status: WalkEvents.IN_PROGRESS,
+              },
+            },
+          },
+        ),
+      ]);
+
+      this.socket.publishEventToRoom(
+        requestId,
+        role === UserRole.DogWalker
+          ? SocketResponse.DogWalker
+          : SocketResponse.Owner,
+        WalkEvents.IN_PROGRESS,
+      );
+
+      return {
+        status: 200,
+        data: 'Passeio iniciado com sucesso.',
+      };
+    } catch (error) {
+      console.log('Error starting walk:', error);
       return {
         status: 500,
         data: 'Erro interno do servidor',
