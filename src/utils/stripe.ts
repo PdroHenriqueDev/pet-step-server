@@ -64,6 +64,7 @@ class StripUtils {
       off_session: true,
       confirm: true,
       description: requestId,
+      transfer_group: requestId,
       transfer_data: {
         destination: dogWalkerStripeAccountId,
       },
@@ -238,6 +239,39 @@ class StripUtils {
     });
 
     return transfers;
+  }
+
+  async handleRefund({
+    paymentIntentId,
+    requestId,
+    amountInCents,
+  }: {
+    paymentIntentId: string;
+    requestId: string;
+    amountInCents?: number;
+  }) {
+    const transfers = await this.stripe.transfers.list({
+      transfer_group: requestId,
+    });
+
+    const transferId = transfers.data.length > 0 ? transfers.data[0].id : null;
+
+    if (!transferId) {
+      return {
+        status: 500,
+        data: 'Erro interno.',
+      };
+    }
+    await this.stripe.transfers.createReversal(transferId, {
+      amount: amountInCents,
+    });
+
+    await this.stripe.refunds.create({payment_intent: paymentIntentId});
+
+    return {
+      status: 200,
+      data: 'Reembolso processado e transferência revertida com sucesso',
+    };
   }
 }
 

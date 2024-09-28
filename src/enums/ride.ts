@@ -1,9 +1,10 @@
 export enum RideEvents {
   PENDING = 'pending',
-  ACCEPTED_SUCCESSFULLY = 'accepted_successfully',
-  INVALID_REQUEST = 'invalid_request',
-  SERVER_ERROR = 'server_error',
-  PAYMENT_FAILURE = 'payment_failure',
+  ACCEPTED_SUCCESSFULLY = 'accepted',
+  INVALID_REQUEST = 'invalidRequest',
+  SERVER_ERROR = 'serverError',
+  PAYMENT_FAILURE = 'paymentFailure',
   CANCELLED = 'cancelled',
   COMPLETED = 'completed',
+  REQUEST_DENIED = 'requestDenied',
 }

@@ -132,6 +132,21 @@ class WalkController {
     return res.status(status).send(data);
   }
 
+  async deny(req: Request, res: Response): Promise<Response<ApiResponse>> {
+    const {requestId} = req.params;
+
+    const role = req.user.role;
+
+    if (!requestId) {
+      return res.status(400).send({status: 400, data: 'Requisição inválida'});
+    }
+
+    const response = await WalkRepository.denyWalk(requestId, role);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
   async cancel(req: Request, res: Response): Promise<Response<ApiResponse>> {
     const {requestId} = req.params;
 

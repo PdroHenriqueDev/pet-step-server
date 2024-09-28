@@ -373,8 +373,8 @@ class WalkRepository {
           status: 400,
           data:
             status === RideEvents.ACCEPTED_SUCCESSFULLY
-              ? 'Passeio já foi aceito'
-              : 'Passeio foi cancelado',
+              ? 'Passeio já foi aceito.'
+              : 'Passeio foi cancelado.',
         };
       }
 
@@ -389,7 +389,7 @@ class WalkRepository {
 
         return {
           status: 404,
-          data: 'Requisição inválida',
+          data: 'Requisição inválida.',
         };
       }
 
@@ -402,7 +402,7 @@ class WalkRepository {
 
         return {
           status: 404,
-          data: 'Requisição inválida',
+          data: 'Requisição inválida.',
         };
       }
 
@@ -434,6 +434,11 @@ class WalkRepository {
           {$set: {currentWalk: null}},
         );
 
+        this.dogWalkersCollection.updateOne(
+          {_id: new ObjectId(dogWalker._id as string)},
+          {$set: {currentWalk: null}},
+        );
+
         this.socket.publishEventToRoom(
           requestId,
           SocketResponse.DogWalker,
@@ -446,10 +451,12 @@ class WalkRepository {
         };
       }
 
+      const paymentIntentId = paymentStatus.id;
+
       await Promise.all([
         this.requestRideCollection.updateOne(
           {_id: new ObjectId(requestId)},
-          {$set: {status: RideEvents.ACCEPTED_SUCCESSFULLY}},
+          {$set: {status: RideEvents.ACCEPTED_SUCCESSFULLY, paymentIntentId}},
         ),
         this.ownerCollection.updateOne(
           {_id: new ObjectId(owner._id)},
@@ -597,6 +604,86 @@ class WalkRepository {
     }
   }
 
+  async denyWalk(
+    requestId: string,
+    role: UserRole,
+  ): Promise<RepositoryResponse> {
+    try {
+      const request = await this.requestRideCollection.findOne({
+        _id: new ObjectId(requestId),
+      });
+
+      if (!request) {
+        return {
+          status: 400,
+          data: 'Solicitação não encontrada.',
+        };
+      }
+
+      if (request?.status !== RideEvents.PENDING) {
+        return {
+          status: 400,
+          data: 'Solicitação não pode ser negada.',
+        };
+      }
+
+      const {owner, dogWalker} = request.displayData;
+
+      if (!owner || !dogWalker) {
+        return {
+          status: 400,
+          data: 'Informações de proprietário ou passeador estão ausentes.',
+        };
+      }
+
+      await Promise.all([
+        this.requestRideCollection.updateOne(
+          {_id: new ObjectId(requestId)},
+          {
+            $set: {
+              status: RideEvents.REQUEST_DENIED,
+            },
+          },
+        ),
+        this.dogWalkersCollection.updateOne(
+          {_id: new ObjectId(dogWalker._id)},
+          {
+            $set: {
+              currentWalk: null,
+            },
+          },
+        ),
+        this.ownerCollection.updateOne(
+          {_id: new ObjectId(owner._id)},
+          {
+            $set: {
+              currentWalk: null,
+            },
+          },
+        ),
+      ]);
+
+      this.socket.publishEventToRoom(
+        requestId,
+        role === UserRole.DogWalker
+          ? SocketResponse.DogWalker
+          : SocketResponse.Owner,
+        RideEvents.REQUEST_DENIED,
+      );
+
+      return {
+        status: 200,
+        data: 'Solicitação negada.',
+      };
+    } catch (error) {
+      console.log('Erro ao negar solicitação:', error);
+      return {
+        status: 500,
+        data: 'Erro interno do servidor',
+      };
+    }
+  }
+
   async cancelWalk(
     requestId: string,
     role: UserRole,
@@ -611,16 +698,37 @@ class WalkRepository {
           status: 400,
           data: !request
             ? 'Solicitação não encontrada.'
-            : 'Solicitação já cancelada',
+            : 'Solicitação já cancelada.',
         };
       }
 
-      const {owner, dogWalker} = request.displayData;
+      const {displayData, paymentIntentId} = request;
 
-      if (!owner || !dogWalker) {
+      const {owner, dogWalker, walk} = displayData;
+
+      if (!owner || !dogWalker || !paymentIntentId || !walk) {
         return {
-          status: 400,
-          data: 'Informações de proprietário ou passeador estão ausentes.',
+          status: 500,
+          data: 'Erro interno.',
+        };
+      }
+
+      const {finalCost} = walk;
+
+      const finalCostInCents = Math.round(finalCost * 100);
+
+      const refund = await StripeUtils.handleRefund({
+        paymentIntentId,
+        requestId,
+        amountInCents: finalCostInCents,
+      });
+
+      const {status: refundStatus, data: refundData} = refund;
+
+      if (refundStatus !== 200) {
+        return {
+          status: refundStatus,
+          data: refundData,
         };
       }
 
@@ -661,10 +769,10 @@ class WalkRepository {
 
       return {
         status: 200,
-        data: 'Solicitação cancelada.',
+        data: 'Passeio cancelado.',
       };
     } catch (error) {
-      console.error('Erro ao cancelar solicitação:', error);
+      console.log('Erro ao cancelar passeio:', error);
       return {
         status: 500,
         data: 'Erro interno do servidor',
