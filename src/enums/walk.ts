@@ -1,4 +1,4 @@
-export enum RideEvents {
+export enum WalkEvents {
   PENDING = 'pending',
   ACCEPTED_SUCCESSFULLY = 'accepted',
   INVALID_REQUEST = 'invalidRequest',
@@ -7,4 +7,5 @@ export enum RideEvents {
   CANCELLED = 'cancelled',
   COMPLETED = 'completed',
   REQUEST_DENIED = 'requestDenied',
+  IN_PROGRESS = 'inProgress',
 }

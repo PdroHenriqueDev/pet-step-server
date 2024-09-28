@@ -4,7 +4,6 @@ import StripeUtils from '../utils/stripe';
 import {Owner} from '../interfaces/owner';
 import DogWalkerRepository from './dogWalkerRepository';
 import {calculateWalkCost} from '../utils/calculateWalkCost';
-import {RideEvents} from '../enums/ride';
 import {SocketInit} from '../websocket/testClas';
 import {RepositoryResponse} from '../interfaces/apitResponse';
 import {WalkProps} from '../interfaces/walk';
@@ -12,6 +11,7 @@ import NotificatinUtils from '../utils/notification';
 import {DogWalkerProps} from '../interfaces/dogWalker';
 import {UserRole} from '../enums/role';
 import {SocketResponse} from '../enums/socketResponse';
+import {WalkEvents} from '../enums/walk';
 
 class WalkRepository {
   get db() {
@@ -213,7 +213,7 @@ class WalkRepository {
       const requestRideCollection = await this.requestRideCollection.insertOne({
         calculationId: calculation._id,
         displayData,
-        status: RideEvents.PENDING,
+        status: WalkEvents.PENDING,
         createdAt: this.currentDate,
         updatedAt: this.currentDate,
       });
@@ -243,7 +243,7 @@ class WalkRepository {
           {_id: requestId},
           {
             $set: {
-              status: RideEvents.SERVER_ERROR,
+              status: WalkEvents.SERVER_ERROR,
             },
           },
         );
@@ -261,7 +261,7 @@ class WalkRepository {
             $set: {
               currentWalk: {
                 requestId,
-                status: RideEvents.PENDING,
+                status: WalkEvents.PENDING,
               },
             },
           },
@@ -272,7 +272,7 @@ class WalkRepository {
             $set: {
               currentWalk: {
                 requestId,
-                status: RideEvents.PENDING,
+                status: WalkEvents.PENDING,
               },
             },
           },
@@ -304,17 +304,17 @@ class WalkRepository {
   private async handleInvalidRideRequest(requestId: string) {
     await this.requestRideCollection.updateOne(
       {_id: new ObjectId(requestId)},
-      {$set: {status: RideEvents.INVALID_REQUEST}},
+      {$set: {status: WalkEvents.INVALID_REQUEST}},
     );
 
     this.socket.publishEventToRoom(
       requestId,
       SocketResponse.DogWalker,
-      RideEvents.INVALID_REQUEST,
+      WalkEvents.INVALID_REQUEST,
     );
   }
 
-  private async handleFailedRideRequest(requestId: string, status: RideEvents) {
+  private async handleFailedRideRequest(requestId: string, status: WalkEvents) {
     const requestRide = await this.requestRideCollection.findOne({
       _id: new ObjectId(requestId),
     });
@@ -354,7 +354,7 @@ class WalkRepository {
         this.socket.publishEventToRoom(
           requestId,
           SocketResponse.DogWalker,
-          RideEvents.INVALID_REQUEST,
+          WalkEvents.INVALID_REQUEST,
         );
 
         return {
@@ -366,13 +366,13 @@ class WalkRepository {
       const {status, displayData} = requestRide;
 
       if (
-        status === RideEvents.ACCEPTED_SUCCESSFULLY ||
-        status === RideEvents.CANCELLED
+        status === WalkEvents.ACCEPTED_SUCCESSFULLY ||
+        status === WalkEvents.CANCELLED
       ) {
         return {
           status: 400,
           data:
-            status === RideEvents.ACCEPTED_SUCCESSFULLY
+            status === WalkEvents.ACCEPTED_SUCCESSFULLY
               ? 'Passeio já foi aceito.'
               : 'Passeio foi cancelado.',
         };
@@ -426,7 +426,7 @@ class WalkRepository {
       ) {
         await this.requestRideCollection.updateOne(
           {_id: new ObjectId(requestId)},
-          {$set: {status: RideEvents.PAYMENT_FAILURE}},
+          {$set: {status: WalkEvents.PAYMENT_FAILURE}},
         );
 
         await this.ownerCollection.updateOne(
@@ -442,7 +442,7 @@ class WalkRepository {
         this.socket.publishEventToRoom(
           requestId,
           SocketResponse.DogWalker,
-          RideEvents.PAYMENT_FAILURE,
+          WalkEvents.PAYMENT_FAILURE,
         );
 
         return {
@@ -456,7 +456,7 @@ class WalkRepository {
       await Promise.all([
         this.requestRideCollection.updateOne(
           {_id: new ObjectId(requestId)},
-          {$set: {status: RideEvents.ACCEPTED_SUCCESSFULLY, paymentIntentId}},
+          {$set: {status: WalkEvents.ACCEPTED_SUCCESSFULLY, paymentIntentId}},
         ),
         this.ownerCollection.updateOne(
           {_id: new ObjectId(owner._id)},
@@ -464,7 +464,7 @@ class WalkRepository {
             $set: {
               currentWalk: {
                 requestId,
-                status: RideEvents.ACCEPTED_SUCCESSFULLY,
+                status: WalkEvents.ACCEPTED_SUCCESSFULLY,
               },
             },
           },
@@ -475,7 +475,7 @@ class WalkRepository {
             $set: {
               currentWalk: {
                 requestId,
-                status: RideEvents.ACCEPTED_SUCCESSFULLY,
+                status: WalkEvents.ACCEPTED_SUCCESSFULLY,
               },
             },
           },
@@ -485,7 +485,7 @@ class WalkRepository {
       this.socket.publishEventToRoom(
         requestId,
         SocketResponse.DogWalker,
-        RideEvents.ACCEPTED_SUCCESSFULLY,
+        WalkEvents.ACCEPTED_SUCCESSFULLY,
       );
 
       return {
@@ -494,7 +494,7 @@ class WalkRepository {
       };
     } catch (error) {
       console.error(`Error aceitando o passeio ${requestId}:`, error);
-      await this.handleFailedRideRequest(requestId, RideEvents.SERVER_ERROR);
+      await this.handleFailedRideRequest(requestId, WalkEvents.SERVER_ERROR);
 
       return {
         status: 500,
@@ -556,7 +556,7 @@ class WalkRepository {
         .find(
           {
             'calculation.ownerId': ownerId,
-            status: RideEvents.COMPLETED,
+            status: WalkEvents.COMPLETED,
           },
           {
             projection: {
@@ -620,7 +620,7 @@ class WalkRepository {
         };
       }
 
-      if (request?.status !== RideEvents.PENDING) {
+      if (request?.status !== WalkEvents.PENDING) {
         return {
           status: 400,
           data: 'Solicitação não pode ser negada.',
@@ -641,7 +641,7 @@ class WalkRepository {
           {_id: new ObjectId(requestId)},
           {
             $set: {
-              status: RideEvents.REQUEST_DENIED,
+              status: WalkEvents.REQUEST_DENIED,
             },
           },
         ),
@@ -668,7 +668,7 @@ class WalkRepository {
         role === UserRole.DogWalker
           ? SocketResponse.DogWalker
           : SocketResponse.Owner,
-        RideEvents.REQUEST_DENIED,
+        WalkEvents.REQUEST_DENIED,
       );
 
       return {
@@ -693,7 +693,7 @@ class WalkRepository {
         _id: new ObjectId(requestId),
       });
 
-      if (!request || request?.status === RideEvents.CANCELLED) {
+      if (!request || request?.status === WalkEvents.CANCELLED) {
         return {
           status: 400,
           data: !request
@@ -737,7 +737,7 @@ class WalkRepository {
           {_id: new ObjectId(requestId)},
           {
             $set: {
-              status: RideEvents.CANCELLED,
+              status: WalkEvents.CANCELLED,
             },
           },
         ),
@@ -764,7 +764,7 @@ class WalkRepository {
         role === UserRole.DogWalker
           ? SocketResponse.DogWalker
           : SocketResponse.Owner,
-        RideEvents.CANCELLED,
+        WalkEvents.CANCELLED,
       );
 
       return {
