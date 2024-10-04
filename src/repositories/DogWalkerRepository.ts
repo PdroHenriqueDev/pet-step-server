@@ -4,7 +4,7 @@ import MongoConnection from '../database/mongoConnection';
 import {getDistance} from 'geolib';
 import {DogWalkerProps} from '../interfaces/dogWalker';
 import stripePackage from 'stripe';
-import {SocketInit} from '../websocket/testClas';
+import {SocketInit} from '../websocket';
 import {RepositoryResponse} from '../interfaces/apitResponse';
 import {hash, genSalt} from 'bcrypt';
 import StripeUtils from '../utils/stripe';

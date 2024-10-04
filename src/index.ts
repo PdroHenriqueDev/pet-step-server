@@ -4,7 +4,7 @@ import {Server} from 'socket.io';
 import routes from './routes';
 import dotenv from 'dotenv';
 import MongoConnection from './database/mongoConnection';
-import {SocketInit} from './websocket/testClas';
+import {SocketInit} from './websocket';
 import cors from 'cors';
 
 dotenv.config();

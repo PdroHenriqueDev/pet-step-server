@@ -4,7 +4,7 @@ import StripeUtils from '../utils/stripe';
 import {Owner} from '../interfaces/owner';
 import DogWalkerRepository from './dogWalkerRepository';
 import {calculateWalkCost} from '../utils/calculateWalkCost';
-import {SocketInit} from '../websocket/testClas';
+import {SocketInit} from '../websocket';
 import {RepositoryResponse} from '../interfaces/apitResponse';
 import {WalkProps} from '../interfaces/walk';
 import NotificatinUtils from '../utils/notification';
@@ -857,6 +857,34 @@ class WalkRepository {
       return {
         status: 500,
         data: 'Erro interno do servidor',
+      };
+    }
+  }
+
+  async getWalkStatus(requestId: string): Promise<RepositoryResponse> {
+    try {
+      const request = await this.requestRideCollection.findOne({
+        _id: new ObjectId(requestId),
+      });
+  
+      if (!request) {
+        return {
+          status: 404,
+          data: 'Solicitação não encontrada.',
+        };
+      }
+
+      const {status} = request;
+  
+      return {
+        status: 200,
+        data: status,
+      };
+    } catch (error) {
+      console.error('Erro ao obter status da solicitação:', error);
+      return {
+        status: 500,
+        data: 'Erro interno ao buscar o status do passeio.',
       };
     }
   }

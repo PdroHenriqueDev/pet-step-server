@@ -176,6 +176,19 @@ class WalkController {
     const {status} = response;
     return res.status(status).send(response);
   }
+
+  async status(req: Request, res: Response): Promise<Response<ApiResponse>> {
+    const {requestId} = req.params;
+
+    if (!requestId) {
+      return res.status(400).send({status: 400, data: 'Requisição inválida'});
+    }
+
+    const response = await WalkRepository.getWalkStatus(requestId);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
 }
 
 export default new WalkController();

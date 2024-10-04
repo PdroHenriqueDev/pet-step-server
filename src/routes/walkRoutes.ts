@@ -5,6 +5,7 @@ const dogWalkerRouter = express.Router();
 
 dogWalkerRouter.get('/list/:ownerId', WalkController.listWalks);
 dogWalkerRouter.get('/request/:requestId', WalkController.requestById);
+dogWalkerRouter.get('/status/:requestId', WalkController.status);
 dogWalkerRouter.get('/:requestId', WalkController.walkData);
 
 dogWalkerRouter.post('/calculate-cost', WalkController.calculateCost);
