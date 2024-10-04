@@ -20,6 +20,7 @@ export class SocketInit {
       }
 
       socket.on(SocketResponse.DogWalkerLocation, data => {
+        console.log('got here SocketResponse', data)
         const requestId = socket.handshake.query?.request_id as string;
         if (requestId) {
           const {longitude, latitude} = data;
@@ -27,6 +28,13 @@ export class SocketInit {
             longitude,
             latitude,
           });
+        }
+      });
+      
+      socket.on(SocketResponse.Walk, data => {
+        const requestId = socket.handshake.query?.request_id as string;
+        if (requestId) {
+          this.publishEventToRoom(requestId, SocketResponse.Walk, data);
         }
       });
 
@@ -40,7 +48,7 @@ export class SocketInit {
     return SocketInit.instance;
   }
 
-  public publishEvent(event: string, data: any) {
+  public publishEvent(event: SocketResponse, data: any) {
     this.socketIo.emit(event, data);
   }
 
@@ -54,7 +62,6 @@ export class SocketInit {
   }
 
   simulateWalk(socket: Socket) {
-    console.log('got here simulateWalk');
     let latitude = -23.5505;
     let longitude = -46.6333;
 

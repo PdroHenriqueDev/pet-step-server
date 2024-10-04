@@ -45,7 +45,7 @@ class OwnerRepository {
 
       const newOwner = {
         ...owner,
-        customerStripe,
+        stripeAccountId: customerStripe.id,
         location,
         dogs: dogsWithId,
         rate: 5,

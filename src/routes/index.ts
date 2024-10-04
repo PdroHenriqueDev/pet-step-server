@@ -17,6 +17,7 @@ router.get('/', (req, res) => {
 router.use('/dog-walker', dogWalkerRoutes);
 router.use('/owner', ownerRoutes);
 router.use('/payment', paymentRoutes);
+// router.use('/walk', walkRoutes);
 router.use('/walk', authenticateToken, walkRoutes);
 router.use('/auth', authRoutes);
 router.use('/application', applicationRoutes);

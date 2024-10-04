@@ -309,7 +309,7 @@ class WalkRepository {
 
     this.socket.publishEventToRoom(
       requestId,
-      SocketResponse.DogWalker,
+      SocketResponse.Walk,
       WalkEvents.INVALID_REQUEST,
     );
   }
@@ -339,7 +339,7 @@ class WalkRepository {
       ),
     ]);
 
-    this.socket.publishEventToRoom(requestId, SocketResponse.DogWalker, status);
+    this.socket.publishEventToRoom(requestId, SocketResponse.Walk, status);
   }
 
   async acceptRide(requestId: string): Promise<RepositoryResponse> {
@@ -353,7 +353,7 @@ class WalkRepository {
 
         this.socket.publishEventToRoom(
           requestId,
-          SocketResponse.DogWalker,
+          SocketResponse.Walk,
           WalkEvents.INVALID_REQUEST,
         );
 
@@ -406,7 +406,7 @@ class WalkRepository {
         };
       }
 
-      const {customerStripe, defaultPayment} = ownerExists;
+      const {stripeAccountId: ownerStripeAccountId, defaultPayment} = ownerExists;
       const {stripeAccountId} = dogWalkerExists;
       const {totalCost} = walk;
 
@@ -415,7 +415,7 @@ class WalkRepository {
       const paymentStatus = await StripeUtils.handlePayment({
         requestId,
         valueInCents,
-        customerStripeId: customerStripe.id,
+        customerStripeId: ownerStripeAccountId,
         defaultPayment,
         dogWalkerStripeAccountId: stripeAccountId,
       });
@@ -441,7 +441,7 @@ class WalkRepository {
 
         this.socket.publishEventToRoom(
           requestId,
-          SocketResponse.DogWalker,
+          SocketResponse.Walk,
           WalkEvents.PAYMENT_FAILURE,
         );
 
@@ -484,7 +484,7 @@ class WalkRepository {
 
       this.socket.publishEventToRoom(
         requestId,
-        SocketResponse.DogWalker,
+        SocketResponse.Walk,
         WalkEvents.ACCEPTED_SUCCESSFULLY,
       );
 
@@ -665,9 +665,7 @@ class WalkRepository {
 
       this.socket.publishEventToRoom(
         requestId,
-        role === UserRole.DogWalker
-          ? SocketResponse.DogWalker
-          : SocketResponse.Owner,
+        SocketResponse.Walk,
         WalkEvents.REQUEST_DENIED,
       );
 
@@ -772,9 +770,7 @@ class WalkRepository {
 
       this.socket.publishEventToRoom(
         requestId,
-        role === UserRole.DogWalker
-          ? SocketResponse.DogWalker
-          : SocketResponse.Owner,
+        SocketResponse.Walk,
         WalkEvents.CANCELLED,
       );
 
@@ -848,9 +844,7 @@ class WalkRepository {
 
       this.socket.publishEventToRoom(
         requestId,
-        role === UserRole.DogWalker
-          ? SocketResponse.DogWalker
-          : SocketResponse.Owner,
+        SocketResponse.Walk,
         WalkEvents.IN_PROGRESS,
       );
 
