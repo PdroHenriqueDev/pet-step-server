@@ -56,7 +56,7 @@ jobs:
         run: docker rm -f petstep-nodejs-app-container || true
 
       - name: Run docker-compose
-        run: docker-compose -f ./docker-compose.yml up -d
+        run: docker-compose up
 
       - name: Run Docker Container
         run: docker run -d -p 3000:3000 --name petstep-nodejs-app-container ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
