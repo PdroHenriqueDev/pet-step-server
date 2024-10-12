@@ -44,23 +44,11 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: [petStepServerRunner]
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: SSH to EC2 and Pull the Docker image
-        uses: appleboy/ssh-action@v1.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-            docker pull ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
-            docker rm -f nodejs-app-container || true
-            docker run -d -p 80:80 --name nodejs-app-container --env-file .env ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
+      - name: Pull Image from Docker Hub
+      - run: docker pull ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
+      - name: Delete old container
+      - run: docker rm -f petstep-nodejs-app-container || true
+      - name: Run Docker Container
+      - run: docker run -d -p 3000:3000 -name petstep-nodejs-app-container ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
