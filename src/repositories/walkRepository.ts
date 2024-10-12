@@ -12,6 +12,7 @@ import {DogWalkerProps} from '../interfaces/dogWalker';
 import {UserRole} from '../enums/role';
 import {SocketResponse} from '../enums/socketResponse';
 import {WalkEvents} from '../enums/walk';
+import FirebaseAdminUtil from '../utils/firebaseAdmin';
 
 class WalkRepository {
   get db() {
@@ -406,7 +407,8 @@ class WalkRepository {
         };
       }
 
-      const {stripeAccountId: ownerStripeAccountId, defaultPayment} = ownerExists;
+      const {stripeAccountId: ownerStripeAccountId, defaultPayment} =
+        ownerExists;
       const {stripeAccountId} = dogWalkerExists;
       const {totalCost} = walk;
 
@@ -488,6 +490,14 @@ class WalkRepository {
         WalkEvents.ACCEPTED_SUCCESSFULLY,
       );
 
+      await FirebaseAdminUtil.createChat({
+        chatId: requestId,
+        dogWalkerId: dogWalker._id,
+        ownerId: owner._id,
+        dogWalkerToken: dogWalkerExists.deviceToken,
+        ownerToken: ownerExists?.deviceToken ?? '',
+      });
+
       return {
         status: 200,
         data: requestId,
@@ -515,20 +525,28 @@ class WalkRepository {
           data: 'Solicitação não existe',
         };
 
-      const {dogWalker, calculation} = requestRide;
-      const {_id, name, rate} = dogWalker ?? {};
+      const {dogWalker, walk, owner} = requestRide.displayData;
+      const {
+        _id: dogWalkerId,
+        name: dogWalkerName,
+        rate: dogWalkerRate,
+      } = dogWalker;
+      const {_id: ownerId, name: ownerName, rate: ownerRate} = owner;
 
-      const {costDetails} = calculation ?? {};
-      const {walkPrice} = costDetails ?? {};
-      const {durationMinutes} = walkPrice ?? {};
+      const {durationMinutes} = walk;
 
       const response = {
         dogWalker: {
-          _id: _id ?? null,
-          name: name ?? null,
-          rate: rate ?? null,
+          _id: dogWalkerId,
+          name: dogWalkerName,
+          rate: dogWalkerRate,
         },
-        durationMinutes: durationMinutes ?? null,
+        owner: {
+          _id: ownerId,
+          name: ownerName,
+          rate: ownerRate,
+        },
+        durationMinutes: durationMinutes,
       };
 
       return {
@@ -805,6 +823,13 @@ class WalkRepository {
         };
       }
 
+      if (role !== UserRole.DogWalker) {
+        return {
+          status: 401,
+          data: 'Você não está autorizado a aceitar o passeii',
+        };
+      }
+
       const {displayData} = request;
 
       const {owner, dogWalker} = displayData;
@@ -866,7 +891,7 @@ class WalkRepository {
       const request = await this.requestRideCollection.findOne({
         _id: new ObjectId(requestId),
       });
-  
+
       if (!request) {
         return {
           status: 404,
@@ -875,7 +900,7 @@ class WalkRepository {
       }
 
       const {status} = request;
-  
+
       return {
         status: 200,
         data: status,

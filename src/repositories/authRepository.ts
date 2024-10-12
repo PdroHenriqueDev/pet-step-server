@@ -7,6 +7,7 @@ import {sendPasswordResetEmail} from '../utils/sendPasswordResetEmail';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 import {ObjectId} from 'mongodb';
 import {DogWalkerApplicationStatus} from '../enums/dogWalkerApplicationStatus';
+import FirebaseAdminUtil from '../utils/firebaseAdmin';
 
 class AuthRepository {
   get db() {
@@ -55,6 +56,15 @@ class AuthRepository {
 
       const {password: hashPassword, ...userWithoutPassword} = user;
 
+      const isPasswordValid = await compare(password, hashPassword);
+
+      if (!isPasswordValid) {
+        return {
+          status: 401,
+          data: 'Credenciais inválidas.',
+        };
+      }
+
       if (user.status === DogWalkerApplicationStatus.Deactivated) {
         await Promise.all([
           this.dogWalkerApplicationCollection.updateOne(
@@ -83,21 +93,22 @@ class AuthRepository {
         }
       }
 
-      const isPasswordValid = await compare(password, hashPassword);
-
-      if (!isPasswordValid) {
-        return {
-          status: 401,
-          data: 'Credenciais inválidas.',
-        };
-      }
-
       const accessToken = generateAccessToken(user._id, role);
       const refreshToken = generateRefreshToken(user._id, role);
 
+      const firebaseAdmin = FirebaseAdminUtil.getAdmin();
+      const firebaseToken = await firebaseAdmin
+        .auth()
+        .createCustomToken(user._id.toString());
+
       return {
         status: 200,
-        data: {accessToken, refreshToken, user: userWithoutPassword},
+        data: {
+          accessToken,
+          refreshToken,
+          firebaseToken,
+          user: userWithoutPassword,
+        },
       };
     } catch (error) {
       console.log('Algo de errado ao fazer logion:', error);

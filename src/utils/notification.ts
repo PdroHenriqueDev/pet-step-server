@@ -1,9 +1,4 @@
-import admin from 'firebase-admin';
-import serviceAccount from '../../firebase-admin.config.json';
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-});
+import FirebaseAdminUtil from './firebaseAdmin';
 
 class NotificationUtils {
   async sendNotification({
@@ -19,32 +14,33 @@ class NotificationUtils {
       requestId?: string;
     };
   }): Promise<{status: number; data: string}> {
-    const message: admin.messaging.Message = {
-      notification: {
-        title,
-        body,
-      },
-      token,
-      data: {
-        requestId: data?.requestId ?? '',
-      },
-      android: {
-        priority: 'high',
-        notification: {
-          color: '#F7CE45',
-        },
-      },
-      apns: {
-        payload: {
-          aps: {
-            contentAvailable: true,
-            priority: 10,
-          },
-        },
-      },
-    };
+    const admin = FirebaseAdminUtil.getAdmin();
 
     try {
+      const message = {
+        notification: {
+          title,
+          body,
+        },
+        token,
+        data: {
+          requestId: data?.requestId ?? '',
+        },
+        android: {
+          priority: 'high' as const,
+          notification: {
+            color: '#F7CE45',
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              contentAvailable: true,
+              priority: 10,
+            },
+          },
+        },
+      };
       await admin.messaging().send(message);
 
       return {

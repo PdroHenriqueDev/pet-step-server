@@ -20,7 +20,7 @@ export class SocketInit {
       }
 
       socket.on(SocketResponse.DogWalkerLocation, data => {
-        console.log('got here SocketResponse', data)
+        console.log('got here SocketResponse', data);
         const requestId = socket.handshake.query?.request_id as string;
         if (requestId) {
           const {longitude, latitude} = data;
@@ -30,7 +30,7 @@ export class SocketInit {
           });
         }
       });
-      
+
       socket.on(SocketResponse.Walk, data => {
         const requestId = socket.handshake.query?.request_id as string;
         if (requestId) {
