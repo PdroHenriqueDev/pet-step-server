@@ -54,7 +54,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: SSH to EC2 and Pull the Docker image
-        uses: appleboy/ssh-action@v1.1.0
+        uses: appleboy/ssh-action@v1.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
