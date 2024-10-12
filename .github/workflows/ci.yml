@@ -1,0 +1,67 @@
+name: Deploy Pet Step Server Nodejs Application
+
+on:
+  push: 
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      
+      - name: Create .env file
+        run: |
+          echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" >> .env
+          echo "MONGO_PORT=${{ secrets.MONGO_PORT }}" >> .env
+          echo "MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}" >> .env
+          echo "MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}" >> .env
+          echo "MONGO_DB_PATH=${{ secrets.MONGO_DB_PATH }}" >> .env
+          echo "MONGO_EXPRESS_PORT=${{ secrets.MONGO_EXPRESS_PORT }}" >> .env
+          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
+          echo "JWT_SECRET_ACCESS_TOKEN=${{ secrets.JWT_SECRET_ACCESS_TOKEN }}" >> .env
+          echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
+          echo "FROM_EMAIL=${{ secrets.FROM_EMAIL }}" >> .env
+          echo "STMP_HOST=${{ secrets.STMP_HOST }}" >> .env
+          echo "STMP_PORT=${{ secrets.STMP_PORT }}" >> .env
+          echo "STMP_USER=${{ secrets.STMP_USER }}" >> .env
+          echo "STMP_PASSWORD=${{ secrets.STMP_PASSWORD }}" >> .env
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "PET_STEP_FRONT=${{ secrets.PET_STEP_FRONT }}" >> .env
+
+      - name: Login to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app .
+
+      - name: Publish image to Docker Hub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: SSH to EC2 and Pull the Docker image
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            docker pull ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
+            docker rm -f nodejs-app-container || true
+            docker run -d -p 80:80 --name nodejs-app-container --env-file .env ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
+
