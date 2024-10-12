@@ -46,9 +46,9 @@ jobs:
     needs: build
     runs-on: petStepServerRunner
     steps:
-     - name: Login to Docker Hub
+      - name: Login to Docker Hub
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-      
+
       - name: Pull Image from Docker Hub
         run: docker pull ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
 
