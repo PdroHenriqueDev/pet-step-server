@@ -12,6 +12,26 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
 
+    networks:
+      - mongo-network
+
+  app:
+    image: ${DOCKER_USERNAME}/petstep-nodejs-app:latest
+    container_name: petstep-nodejs-app-container
+    ports:
+      - '3000:3000'
+    depends_on:
+      - mongodb
+    environment:
+      MONGO_HOST: mongodb
+      MONGO_PORT: ${MONGO_PORT}
+      MONGO_DB_NAME: ${MONGO_DB_NAME}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+
+    networks:
+      - mongo-network
+
   mongo-express:
     image: mongo-express
     restart: always
@@ -22,9 +42,10 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
       ME_CONFIG_MONGODB_SERVER: mongodb
-      
     depends_on:
       - mongodb
+    networks:
+      - mongo-network
 
 volumes:
   mongo-data:
