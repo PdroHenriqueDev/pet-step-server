@@ -42,6 +42,29 @@ jobs:
           echo "PET_STEP_FRONT=${{ secrets.PET_STEP_FRONT }}" >> .env
           echo "REAL_TIME_DATABSE=${{ secrets.REAL_TIME_DATABSE }}" >> .env
 
+      - name: Create .env file
+        run: |
+          echo "MONGO_HOST=${{ secrets.MONGO_HOST }}" >> .env
+          echo "MONGO_PORT=${{ secrets.MONGO_PORT }}" >> .env
+          echo "MONGO_DB_NAME=${{ secrets.MONGO_DB_NAME }}" >> .env
+          echo "MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}" >> .env
+          echo "MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}" >> .env
+          echo "MONGO_DB_PATH=${{ secrets.MONGO_DB_PATH }}" >> .env
+          echo "MONGO_EXPRESS_PORT=${{ secrets.MONGO_EXPRESS_PORT }}" >> .env
+          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
+          echo "JWT_SECRET_ACCESS_TOKEN=${{ secrets.JWT_SECRET_ACCESS_TOKEN }}" >> .env
+          echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
+          echo "FROM_EMAIL=${{ secrets.FROM_EMAIL }}" >> .env
+          echo "STMP_HOST=${{ secrets.STMP_HOST }}" >> .env
+          echo "STMP_PORT=${{ secrets.STMP_PORT }}" >> .env
+          echo "STMP_USER=${{ secrets.STMP_USER }}" >> .env
+          echo "STMP_PASSWORD=${{ secrets.STMP_PASSWORD }}" >> .env
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "PET_STEP_FRONT=${{ secrets.PET_STEP_FRONT }}" >> .env
+          echo "REAL_TIME_DATABSE=${{ secrets.REAL_TIME_DATABSE }}" >> .env
+
       - name: Build Docker image
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app .
 
