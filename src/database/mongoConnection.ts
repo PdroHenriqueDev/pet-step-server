@@ -4,11 +4,11 @@ class MongoConnection {
   private static instance: MongoConnection;
   db: Db | null = null;
   client: MongoClient;
-  url: string;
+  mongoUri: string;
 
   constructor() {
-    this.url = process.env.MONGODB_URI ?? '';
-    this.client = new MongoClient(this.url);
+    this.mongoUri = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DB_NAME}?retryWrites=true&writeConcern=majority&authSource=admin`;
+    this.client = new MongoClient(this.mongoUri);
   }
 
   public static getInstance(): MongoConnection {
