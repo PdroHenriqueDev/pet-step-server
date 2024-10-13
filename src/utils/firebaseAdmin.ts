@@ -1,7 +1,4 @@
-// firebaseAdminUtil.ts
-
 import * as admin from 'firebase-admin';
-import serviceAccount from '../../firebase-admin.config.json';
 
 class FirebaseAdminUtil {
   private initialized = false;
@@ -9,10 +6,12 @@ class FirebaseAdminUtil {
   initializeApp() {
     if (!this.initialized) {
       admin.initializeApp({
-        credential: admin.credential.cert(
-          serviceAccount as admin.ServiceAccount,
-        ),
-        databaseURL: 'https://dog-walker-9dd47-default-rtdb.firebaseio.com',
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+        }),
+        databaseURL: process.env.FIREBASE_REAL_TIME_DATABSE,
       });
       this.initialized = true;
       console.log('Firebase Admin initialized');

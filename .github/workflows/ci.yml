@@ -32,6 +32,7 @@ jobs:
           echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
           echo "PET_STEP_FRONT=${{ secrets.PET_STEP_FRONT }}" >> .env
+          echo "REAL_TIME_DATABSE=${{ secrets.REAL_TIME_DATABSE }}" >> .env
 
       - name: Login to Docker Hub
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
