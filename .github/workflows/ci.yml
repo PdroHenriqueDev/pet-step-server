@@ -59,3 +59,9 @@ jobs:
 
       - name: Run Docker Container
         run: docker run -d -p 3000:3000 --name petstep-nodejs-app-container ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
+
+      - name: Pull Image for Mongo Express
+        run: docker pull mongo-express
+
+      - name: Run Mongo Express Docker Container
+        run: docker run -d -p 8082:8081 --name mongo-express --env-file .env mongo-express
