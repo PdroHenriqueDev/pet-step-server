@@ -64,4 +64,4 @@ jobs:
         run: docker pull mongo-express
 
       - name: Run Mongo Express Docker Container
-        run: docker run -d -p 8082:8081 --name mongo-express --env-file .env mongo-express
+        run: docker run -d -p 8082:8081 --name mongo-express
