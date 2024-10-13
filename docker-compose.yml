@@ -6,12 +6,10 @@ services:
     ports:
       - '${MONGO_PORT}:${MONGO_PORT}'
     volumes:
-      - '${MONGO_DB_PATH}:/data/db'
+      - mongo-data:/data/db'
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-    networks:
-      - mongo-compose-network
 
   mongo-express:
     image: mongo-express
@@ -22,9 +20,7 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
       ME_CONFIG_MONGODB_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:${MONGO_PORT}
-    networks:
-      - mongo-compose-network
 
-networks:
-  mongo-compose-network:
-    driver: bridge
+volumes:
+  mongo-data:
+    driver: local
