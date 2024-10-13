@@ -26,8 +26,8 @@ class MongoConnection {
       await this.client.connect();
       this.db = this.client.db();
       console.log('Connected to MongoDB');
-    } catch (e) {
-      console.log('Error connecting to MongoDB', this.url);
+    } catch (error) {
+      console.log('Error connecting to MongoDB', error);
     }
   }
 
