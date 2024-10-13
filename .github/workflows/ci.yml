@@ -51,6 +51,9 @@ jobs:
       - name: Login to Docker Hub
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Pull MongoDB and Mongo Express Images
+      run: docker-compose -f ./docker-compose.yml up -d
+
       - name: Pull Image from Docker Hub
         run: docker pull ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
 
