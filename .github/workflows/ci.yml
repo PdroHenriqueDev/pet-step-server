@@ -14,48 +14,36 @@ jobs:
 
       - name: Create .env file
         run: |
-          echo "MONGO_HOST=${{ secrets.MONGO_HOST }}" >> .env
-          echo "MONGO_PORT=${{ secrets.MONGO_PORT }}" >> .env
+          echo "MONGO_HOST=mongodb" >> .env
+          echo "MONGO_PORT=27017" >> .env
           echo "MONGO_DB_NAME=${{ secrets.MONGO_DB_NAME }}" >> .env
           echo "MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}" >> .env
           echo "MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}" >> .env
-          echo "MONGO_DB_PATH=${{ secrets.MONGO_DB_PATH }}" >> .env
-          echo "MONGO_EXPRESS_PORT=${{ secrets.MONGO_EXPRESS_PORT }}" >> .env
           echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
           echo "JWT_SECRET_ACCESS_TOKEN=${{ secrets.JWT_SECRET_ACCESS_TOKEN }}" >> .env
           echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
-          echo "FROM_EMAIL=${{ secrets.FROM_EMAIL }}" >> .env
-          echo "STMP_HOST=${{ secrets.STMP_HOST }}" >> .env
-          echo "STMP_PORT=${{ secrets.STMP_PORT }}" >> .env
-          echo "STMP_USER=${{ secrets.STMP_USER }}" >> .env
-          echo "STMP_PASSWORD=${{ secrets.STMP_PASSWORD }}" >> .env
-          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
-          echo "PET_STEP_FRONT=${{ secrets.PET_STEP_FRONT }}" >> .env
-          echo "REAL_TIME_DATABSE=${{ secrets.REAL_TIME_DATABSE }}" >> .env
-
-      - name: Install Docker Compose
-        run: |
-          sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
-
-      - name: Build and Start Containers
-        run: docker-compose up -d --build
-
-  deploy:
-    needs: build
-    runs-on: petStepServerRunner
-    steps:
-      - name: Prune Docker to Clean Space
-        run: docker system prune -af
 
       - name: Login to Docker Hub
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Pull Docker Images
-        run: docker-compose pull
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app .
 
-      - name: Restart Containers with Docker Compose
-        run: docker-compose up -d --force-recreate
+      - name: Push Docker image to Docker Hub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy via Docker Compose
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@your-ec2-instance-ip << 'EOF'
+            docker pull ${{ secrets.DOCKER_USERNAME }}/petstep-nodejs-app:latest
+            docker-compose -f /path/to/your/docker-compose.yml up -d
+          EOF
