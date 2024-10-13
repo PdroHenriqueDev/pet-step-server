@@ -1,0 +1,16 @@
+**/node_modules/
+**/dist
+.git
+npm-debug.log
+yarn-error.log
+.coverage
+.coverage.*
+.env
+.aws
+*Dockerfile*
+*docker-compose*
+.git
+**/README.md
+**/LICENSE
+**/.vscode
+**/.editorconfig
