@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon src/index.ts",
+    "build": "tsc",
+    "start": "src/index.ts",
+    "start:dev": "nodemon src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write 'src/**/*.{js,ts}'",
