@@ -7,7 +7,7 @@ class MongoConnection {
   mongoUri: string;
 
   constructor() {
-    this.mongoUri = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DB_NAME}?retryWrites=true&writeConcern=majority&authSource=admin`;
+    this.mongoUri = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DB_NAME}?retryWrites=true&writeConcern=majority&authSource=admin&connectTimeoutMS=30000`;
     this.client = new MongoClient(this.mongoUri);
   }
 
