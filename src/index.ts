@@ -33,7 +33,6 @@ const port = 3000;
 
 app.use('/', routes);
 
-// setupWebSocket(io);
 new SocketInit(io);
 
 (async () => {
@@ -48,6 +47,12 @@ new SocketInit(io);
       console.log(`Server is running on http://localhost:${port} 🔥`);
     });
   } catch (error) {
+    console.log(
+      'process.env.MONGO_INITDB_ROOT_USERNAME',
+      process.env.MONGO_INITDB_ROOT_USERNAME,
+    );
+    console.log('process.env.MONGO_HOST', process.env.MONGO_HOST);
+
     console.error('Failed to initialize the database:', error);
     process.exit(1);
   }
