@@ -11,7 +11,7 @@ import {authenticateToken} from '../middleware/authenticateToken';
 const router = express.Router();
 
 router.get('/', (req, res) => {
-  res.send('Hello World!');
+  res.send('Hello, World!');
 });
 
 router.use('/dog-walker', dogWalkerRoutes);
