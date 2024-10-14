@@ -83,3 +83,6 @@ jobs:
 
       - name: Start containers with Docker Compose
         run: docker-compose up -d
+
+      - name: Clean up Docker
+        run: docker system prune -af
