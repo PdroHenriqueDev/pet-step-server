@@ -5,10 +5,10 @@ npm-debug.log
 yarn-error.log
 .coverage
 .coverage.*
-# .env
+.env
 .aws
-# *Dockerfile*
-# *docker-compose*
+*Dockerfile*
+*docker-compose*
 .git
 **/README.md
 **/LICENSE
