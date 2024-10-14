@@ -42,6 +42,7 @@ new SocketInit(io);
 
     const db = mongoConnection.db;
     console.log(`Database connected: ${db?.databaseName}`);
+    console.log('Envs =>', process.env.FIREBASE_REAL_TIME_DATABSE ?? 'none');
 
     server.listen(port, () => {
       console.log(`Server is running on http://localhost:${port} 🔥`);
