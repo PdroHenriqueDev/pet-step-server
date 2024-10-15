@@ -29,6 +29,7 @@ jobs:
     needs: build
     runs-on: petStepServerRunner
     env:
+      APP_PORT: ${{ secrets.APP_PORT }}
       MONGO_HOST: ${{ secrets.MONGO_HOST }}
       MONGO_PORT: ${{ secrets.MONGO_PORT }}
       MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}

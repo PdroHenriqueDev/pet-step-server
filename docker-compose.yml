@@ -26,6 +26,7 @@ services:
     depends_on:
       - mongodb
     environment:
+      APP_PORT: ${APP_PORT}
       MONGO_HOST: ${MONGO_HOST}
       MONGO_PORT: ${MONGO_PORT}
       MONGO_DB_NAME: ${MONGO_DB_NAME}
