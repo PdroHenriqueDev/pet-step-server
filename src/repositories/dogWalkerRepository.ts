@@ -133,7 +133,7 @@ class DogWalkerRepository {
     latitude: number;
   }): Promise<RepositoryResponse> {
     try {
-      this.dogWalkersCollection.createIndex({location: '2dsphere'});
+      // this.dogWalkersCollection.createIndex({location: '2dsphere'});
 
       const location = {
         type: 'Point',
