@@ -19,10 +19,10 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-    image: phengineer/petstep-nodejs-app:latest
+    image: ${DOCKER_USERNAME}/petstep-nodejs-app:latest
     container_name: petstep-nodejs-app-container
     ports:
-      - '3000:3000'
+      - '${APP_PORT}:3000'
     depends_on:
       - mongodb
     environment:
@@ -41,7 +41,6 @@ services:
       FIREBASE_REAL_TIME_DATABSE: ${FIREBASE_REAL_TIME_DATABSE}
       FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
       FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
-      FIREBASE_TYPE: ${FIREBASE_TYPE}
       FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
 
     networks:
