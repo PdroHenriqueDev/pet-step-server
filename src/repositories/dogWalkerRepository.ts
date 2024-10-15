@@ -54,7 +54,7 @@ class DogWalkerRepository {
     reqIp: string,
   ): Promise<RepositoryResponse> {
     try {
-      // this.dogWalkersCollection.createIndex({ location: "2dsphere" })
+      // this.dogWalkersCollection.createIndex({location: '2dsphere'});
 
       const {password, email, document, name, lastName, address, phone} =
         dogWalker;
@@ -133,7 +133,7 @@ class DogWalkerRepository {
     latitude: number;
   }): Promise<RepositoryResponse> {
     try {
-      // this.dogWalkersCollection.createIndex({location: '2dsphere'});
+      this.dogWalkersCollection.createIndex({location: '2dsphere'});
 
       const location = {
         type: 'Point',
@@ -267,7 +267,7 @@ class DogWalkerRepository {
           rate: {$gte: 4.5},
         })
         .toArray();
-      
+
       const dogWalkersWithDistance = recommedDogWalkers.map(dogWalker => {
         const distanceInMeters = getDistance(
           {latitude, longitude},
