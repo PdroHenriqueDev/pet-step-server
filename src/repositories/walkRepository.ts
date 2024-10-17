@@ -32,7 +32,7 @@ class WalkRepository {
   }
 
   get dogWalkersCollection() {
-    return this.db.collection('dogwalkers');
+    return this.db.collection('dogwalker');
   }
 
   get socket() {

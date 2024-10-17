@@ -20,7 +20,7 @@ class ApplicationRepository {
   }
 
   get dogWalkersCollection() {
-    return this.db.collection('dogwalkers');
+    return this.db.collection('dogwalker');
   }
 
   currentDate = new Date();
