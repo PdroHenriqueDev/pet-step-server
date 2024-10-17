@@ -12,6 +12,11 @@ applicationRouter.get(
   authenticateToken,
   ApplicationController.documentsStatus,
 );
+applicationRouter.get(
+  '/:dogWalkerId',
+  authenticateToken,
+  ApplicationController.application,
+);
 
 applicationRouter.post(
   '/upload-document',

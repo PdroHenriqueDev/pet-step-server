@@ -145,6 +145,16 @@ class ApplicationController {
 
     return res.status(status).send(response);
   }
+
+  async application(req: Request, res: Response): Promise<Response> {
+    const {dogWalkerId} = req.params;
+
+    const response =
+      await ApplicationRepository.getDogWalkerApplication(dogWalkerId);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
 }
 
 export default new ApplicationController();

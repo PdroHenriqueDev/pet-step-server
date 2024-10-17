@@ -1,13 +1,14 @@
 import {ObjectId} from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
 import {RepositoryResponse} from '../interfaces/apitResponse';
-import {uploadToS3} from '../utils/uploadImage';
+import {getSignedUrl, uploadToS3} from '../utils/s3Utils';
 import {
   DocumentReviewStatus,
   DogWalkerApplicationStatus,
 } from '../enums/dogWalkerApplicationStatus';
 import {DocumentType} from '../types/document';
 import {DogWalkerProfile} from '../interfaces/application';
+import {v4 as uuidv4} from 'uuid';
 
 class ApplicationRepository {
   get db() {
@@ -30,23 +31,17 @@ class ApplicationRepository {
     file: Express.Multer.File,
   ): Promise<RepositoryResponse> {
     try {
-      const documentUrl = 'url-some-place';
+      const key = `${uuidv4()}-${file.originalname.replace(/\s+/g, '-')}`;
 
-      // const fileType = file.mimetype.split('/')[1];
-      // const documentUrl = await uploadToS3(file.buffer, fileType);
-
-      // const data = {
-      //   documents: {
-      //     [documentType]: {
-      //       path: documentUrl,
-      //       status: DocumentReviewStatus.Pending,
-      //     },
-      //   },
-      //   updatedAt: this.currentDate,
-      // };
+      await uploadToS3({
+        fileBuffer: file.buffer,
+        key,
+        storageClass: 'STANDARD_IA',
+        fileType: file.mimetype,
+      });
 
       const documentData = {
-        path: documentUrl,
+        path: key,
         status: DocumentReviewStatus.Pending,
       };
 
@@ -282,6 +277,52 @@ class ApplicationRepository {
       status: 200,
       data: 'Atualizado com sucesso',
     };
+  }
+
+  async getDogWalkerApplication(
+    dogWalkerId: string,
+  ): Promise<RepositoryResponse> {
+    try {
+      const application = await this.dogWalkerApplicationCollection.findOne({
+        dogWalkerId: new ObjectId(dogWalkerId),
+      });
+
+      if (!application) {
+        return {
+          status: 404,
+          data: 'Aplicação não encontrada',
+        };
+      }
+
+      const documents = [
+        'document',
+        'selfie',
+        'residence',
+        'criminalRecord',
+      ].reduce(
+        (acc, docType) => {
+          const document = application.documents?.[docType];
+          if (document) {
+            acc[docType] = {...document, url: getSignedUrl(document.path)};
+          }
+          return acc;
+        },
+        {} as Record<string, unknown>,
+      );
+      return {
+        status: 200,
+        data: documents,
+      };
+    } catch (error) {
+      console.log(
+        `Error fetching application and documents for Dog Walker ID ${dogWalkerId}:`,
+        error,
+      );
+      return {
+        status: 500,
+        data: 'Erro interno ao buscar a aplicação e documentos',
+      };
+    }
   }
 
   async deactivateAccount(dogwalkerId: string): Promise<RepositoryResponse> {
