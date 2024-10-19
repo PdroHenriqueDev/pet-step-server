@@ -51,7 +51,7 @@ class DogWalkerRepository {
 
   async addDogWalker(
     dogWalker: DogWalkerProps,
-    reqIp: string,
+    // reqIp: string,
   ): Promise<RepositoryResponse> {
     try {
       // this.dogWalkersCollection.createIndex({location: '2dsphere'});
@@ -70,28 +70,28 @@ class DogWalkerRepository {
         };
       }
 
-      const createStripeAccount = await StripeUtils.createAccount({
-        email: email as string,
-        firstName: name,
-        lastName,
-        dob: {
-          day: 20,
-          month: 10,
-          year: 1999,
-        },
-        address: {
-          city: address.city,
-          country: 'BR',
-          state: address.state,
-          postal_code: address.zipCode,
-          line1: address.street,
-        },
-        reqIp,
-        idNumber: String(document),
-        phone,
-      });
+      // const createStripeAccount = await StripeUtils.createAccount({
+      //   email: email as string,
+      //   firstName: name,
+      //   lastName,
+      //   dob: {
+      //     day: 20,
+      //     month: 10,
+      //     year: 1999,
+      //   },
+      //   address: {
+      //     city: address.city,
+      //     country: 'BR',
+      //     state: address.state,
+      //     postal_code: address.zipCode,
+      //     line1: address.street,
+      //   },
+      //   reqIp,
+      //   idNumber: String(document),
+      //   phone,
+      // });
 
-      const {id: stripeAccountId} = createStripeAccount;
+      // const {id: stripeAccountId} = createStripeAccount;
 
       const salt = await genSalt();
       const hashedPassword = await hash(password!, salt);
@@ -99,7 +99,7 @@ class DogWalkerRepository {
       const newDogWalker = {
         ...dogWalker,
         password: hashedPassword,
-        stripeAccountId,
+        // stripeAccountId,
         rate: 5,
         totalRatings: 0,
         isOnline: false,

@@ -44,15 +44,15 @@ class DogWalker {
       password,
     };
 
-    const reqIp = req.ip;
+    // const reqIp = req.ip;
 
     const response = await DogWalkerRepository.addDogWalker(
       walker,
-      reqIp as string,
+      // reqIp as string,
     );
-    const {status, data} = response;
+    const {status} = response;
 
-    return res.status(status).send(data);
+    return res.status(status).send(response);
   }
 
   async nearests(req: Request, res: Response) {
