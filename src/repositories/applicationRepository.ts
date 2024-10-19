@@ -33,12 +33,22 @@ class ApplicationRepository {
     try {
       const key = `${uuidv4()}-${file.originalname.replace(/\s+/g, '-')}`;
 
-      await uploadToS3({
-        fileBuffer: file.buffer,
-        key,
-        storageClass: 'STANDARD_IA',
-        fileType: file.mimetype,
-      });
+      try {
+        await uploadToS3({
+          fileBuffer: file.buffer,
+          key,
+          storageClass: 'STANDARD_IA',
+          fileType: file.mimetype,
+        });
+      } catch (error) {
+        console.log('Error uploading on S3', error);
+      }
+      // await uploadToS3({
+      //   fileBuffer: file.buffer,
+      //   key,
+      //   storageClass: 'STANDARD_IA',
+      //   fileType: file.mimetype,
+      // });
 
       const documentData = {
         path: key,
