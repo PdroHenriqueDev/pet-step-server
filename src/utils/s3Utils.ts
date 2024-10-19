@@ -30,7 +30,9 @@ export const uploadToS3 = async ({
     ContentType: fileType,
   };
 
-  return await s3.upload(params).promise();
+  const upload = await s3.upload(params).promise();
+
+  return upload;
 };
 
 export const getSignedUrl = (key: string): string => {

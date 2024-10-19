@@ -20,7 +20,7 @@ router.use('/payment', paymentRoutes);
 // router.use('/walk', walkRoutes);
 router.use('/walk', authenticateToken, walkRoutes);
 router.use('/auth', authRoutes);
-router.use('/application', applicationRoutes);
+router.use('/application', authenticateToken, applicationRoutes);
 router.use('/notification', authenticateToken, notificationRoutes);
 
 export default router;

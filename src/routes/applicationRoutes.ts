@@ -9,40 +9,24 @@ const upload = multer({storage: multer.memoryStorage()});
 
 applicationRouter.get(
   '/documents-status',
-  authenticateToken,
   ApplicationController.documentsStatus,
 );
-applicationRouter.get(
-  '/:dogWalkerId',
-  authenticateToken,
-  ApplicationController.application,
-);
+applicationRouter.get('/:dogWalkerId', ApplicationController.application);
 
 applicationRouter.post(
   '/upload-document',
-  authenticateToken,
   upload.single('document'),
   ApplicationController.sendDocuments,
 );
-applicationRouter.post(
-  '/about-me',
-  authenticateToken,
-  ApplicationController.aboutMe,
-);
-applicationRouter.post(
-  '/profile',
-  authenticateToken,
-  ApplicationController.profile,
-);
+applicationRouter.post('/about-me', ApplicationController.aboutMe);
+applicationRouter.post('/profile', ApplicationController.profile);
 applicationRouter.post(
   '/deactivate-account',
-  authenticateToken,
   ApplicationController.deactivateAccount,
 );
 
 applicationRouter.put(
   '/status/:dogWalkerId',
-  authenticateToken,
   ApplicationController.updateApplication,
 );
 
