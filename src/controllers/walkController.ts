@@ -1,6 +1,7 @@
 import {Request, Response} from 'express';
 import WalkRepository from '../repositories/walkRepository';
 import {ApiResponse} from '../interfaces/apitResponse';
+import {UserRole} from '../enums/role';
 
 class WalkController {
   async calculateCost(
@@ -116,6 +117,7 @@ class WalkController {
     const {status, data} = response;
     return res.status(status).send(data);
   }
+
   async listWalks(req: Request, res: Response) {
     const {ownerId} = req.params;
     const {page} = req.query;
@@ -185,6 +187,42 @@ class WalkController {
     }
 
     const response = await WalkRepository.getWalkStatus(requestId);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async finalize(req: Request, res: Response): Promise<Response<ApiResponse>> {
+    const {requestId} = req.params;
+
+    const role = req.user.role;
+
+    if (!requestId || role !== UserRole.DogWalker) {
+      return res.status(400).send({status: 400, data: 'Requisição inválida'});
+    }
+
+    const response = await WalkRepository.completeWalk(requestId);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async walksByDogWalker(req: Request, res: Response) {
+    const dogWalkerId = req.user.id;
+    const {page} = req.query;
+
+    if (!dogWalkerId) {
+      return res.status(400).send({data: 'Requisição inválida'});
+    }
+
+    console.log('got here dogWalkerId =>', dogWalkerId);
+
+    const pageNumber = parseInt(page as string, 10) || 1;
+
+    const response = await WalkRepository.requestsByDogWalker(
+      dogWalkerId,
+      pageNumber,
+    );
 
     const {status} = response;
     return res.status(status).send(response);

@@ -14,7 +14,6 @@ class FirebaseAdminUtil {
         databaseURL: process.env.FIREBASE_REAL_TIME_DATABSE,
       });
       this.initialized = true;
-      console.log('Firebase Admin initialized');
     }
   }
 

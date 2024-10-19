@@ -192,12 +192,12 @@ class WalkRepository {
 
       const displayData = {
         dogWalker: {
-          _id: dogWalkerId,
+          _id: new ObjectId(dogWalkerId),
           name: dogWalker.name,
           rate: dogWalker.rate,
         },
         owner: {
-          _id: ownerId,
+          _id: new ObjectId(ownerId),
           name: owner.name,
           rate: owner.rate,
         },
@@ -910,6 +910,145 @@ class WalkRepository {
       return {
         status: 500,
         data: 'Erro interno ao buscar o status do passeio.',
+      };
+    }
+  }
+
+  async completeWalk(requestId: string): Promise<RepositoryResponse> {
+    try {
+      const request = await this.requestRideCollection.findOne({
+        _id: new ObjectId(requestId),
+      });
+
+      if (!request || request.status !== WalkEvents.IN_PROGRESS) {
+        return {
+          status: 400,
+          data: !request
+            ? 'Solicitação não encontrada.'
+            : 'Passeio não está em andamento.',
+        };
+      }
+
+      const {displayData} = request;
+      const {owner, dogWalker, walk} = displayData;
+
+      if (!owner || !dogWalker || !walk) {
+        return {
+          status: 500,
+          data: 'Erro interno.',
+        };
+      }
+
+      await Promise.all([
+        this.requestRideCollection.updateOne(
+          {_id: new ObjectId(requestId)},
+          {
+            $set: {
+              status: WalkEvents.COMPLETED,
+              updatedAt: new Date(),
+            },
+          },
+        ),
+        this.dogWalkersCollection.updateOne(
+          {_id: new ObjectId(dogWalker._id)},
+          {
+            $set: {currentWalk: null},
+          },
+        ),
+        this.ownerCollection.updateOne(
+          {_id: new ObjectId(owner._id)},
+          {
+            $set: {currentWalk: null},
+          },
+        ),
+      ]);
+
+      this.socket.publishEventToRoom(
+        requestId,
+        SocketResponse.Walk,
+        WalkEvents.COMPLETED,
+      );
+
+      await NotificatinUtils.sendNotification({
+        title: 'Passeio Concluído!',
+        body: `O passeio com ${dogWalker.name} foi concluído com sucesso.`,
+        token: owner.deviceToken,
+        data: {
+          requestId: requestId.toString(),
+        },
+      });
+
+      return {
+        status: 200,
+        data: 'Passeio finalizado com sucesso.',
+      };
+    } catch (error) {
+      console.log('Error finalizing walk:', error);
+      return {
+        status: 500,
+        data: 'Erro interno ao finalizar o passeio.',
+      };
+    }
+  }
+
+  async requestsByDogWalker(
+    dogWalkerId: string,
+    page: number = 1,
+  ): Promise<RepositoryResponse> {
+    const pageSize = 20;
+    const skip = (page - 1) * pageSize;
+
+    try {
+      const requests = await this.requestRideCollection
+        .find(
+          {
+            'displayData.dogWalker._id': new ObjectId(dogWalkerId),
+            status: WalkEvents.COMPLETED,
+          },
+          {
+            projection: {
+              _id: 1,
+              'displayData.owner.name': 1,
+              'displayData.walk.finalCost': 1,
+              createdAt: 1,
+            },
+          },
+        )
+        .skip(skip)
+        .limit(pageSize)
+        .toArray();
+
+      const totalRequestsCount =
+        await this.requestRideCollection.countDocuments({
+          'displayData.dogWalker._id': new ObjectId(dogWalkerId),
+          status: WalkEvents.COMPLETED,
+        });
+
+      const hasMore = totalRequestsCount > skip + requests.length;
+
+      const responses = requests.map(request => {
+        const {_id, displayData, createdAt} = request;
+
+        return {
+          _id,
+          ownerName: displayData.owner.name,
+          price: displayData.walk.finalCost,
+          startDate: createdAt,
+        };
+      });
+
+      return {
+        status: 200,
+        data: {
+          results: responses,
+          hasMore,
+        },
+      };
+    } catch (error) {
+      console.log('Error retrieving requests by dog walker:', error);
+      return {
+        status: 500,
+        data: 'Erro interno do servidor',
       };
     }
   }
