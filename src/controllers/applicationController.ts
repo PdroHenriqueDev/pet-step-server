@@ -9,12 +9,11 @@ class ApplicationController {
     req: Request,
     res: Response,
   ): Promise<Response<ApiResponse>> {
-    const token = req.headers.authorization?.split(' ')[1];
     const {documentType} = req.body;
     const file = req.file;
 
     try {
-      if (!token || !documentType) {
+      if (!documentType) {
         return res.status(400).send({status: 400, data: 'Requisição inválida'});
       }
 
@@ -24,12 +23,9 @@ class ApplicationController {
           .json({status: 400, data: 'Nenhum arquivo enviado'});
       }
 
-      const user = jwt.verify(
-        token,
-        process.env.JWT_SECRET_ACCESS_TOKEN!,
-      ) as JwtPayload;
+      const userId = req.user.id;
 
-      if (!user) {
+      if (!userId) {
         return res.status(401).send({
           status: 401,
           data: 'Faça login novamente',
@@ -37,13 +33,13 @@ class ApplicationController {
       }
 
       const response = await ApplicationRepository.addDocument(
-        user.id,
+        userId,
         documentType,
         file,
       );
 
-      const {status, data} = response;
-      return res.status(status).send(data);
+      const {status} = response;
+      return res.status(status).send(response);
     } catch (error) {
       console.log('Error ao adicionar documento', error);
       return res.status(500).send({
