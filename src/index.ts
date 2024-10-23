@@ -42,12 +42,6 @@ new SocketInit(io);
 
     server.listen(port, () => {
       console.log('Server is running 🔥');
-      console.log({
-        bucket: process.env.S3_BUCKET_NAME,
-        test1: process.env.AWS_REGION,
-        test2: process.env.AWS_ACCESS_KEY_ID,
-        test3: process.env.AWS_SECRET_ACCESS_KEY,
-      });
     });
   } catch (error) {
     console.error('Failed to initialize the database:', error);

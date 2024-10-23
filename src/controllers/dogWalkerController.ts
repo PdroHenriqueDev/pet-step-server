@@ -9,7 +9,6 @@ class DogWalker {
       'name',
       'lastName',
       'document',
-      'birthdate',
       'email',
       'password',
       'address',
@@ -23,20 +22,11 @@ class DogWalker {
         .send({data: `O campo "${missingField}" é obrigatório.`});
     }
 
-    const {
-      name,
-      lastName,
-      birthdate,
-      email,
-      password,
-      document,
-      address,
-      phone,
-    } = req.body;
+    const {name, lastName, email, password, document, address, phone} =
+      req.body;
     const walker: DogWalkerProps = {
       name,
       lastName,
-      birthdate,
       email,
       phone,
       address,
@@ -200,6 +190,43 @@ class DogWalker {
       return res.status(400).send({data: 'Dog walker não encontrado'});
 
     const response = await DogWalkerRepository.termsAcceptance(userId);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async updateField(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const dogWalkerId = req.user.id;
+
+    const {field, newValue} = req.body;
+
+    const allowedFields = [
+      'name',
+      'lastName',
+      'email',
+      'phone',
+      'address',
+      'document',
+    ];
+
+    if (!allowedFields.includes(field)) {
+      return res
+        .status(400)
+        .send({status: 400, data: 'Campo inválido para atualização'});
+    }
+
+    if (!dogWalkerId || !field || !newValue) {
+      return res.status(400).send({status: 400, data: 'Requisição inválida'});
+    }
+
+    const response = await DogWalkerRepository.updateDogWalker({
+      dogWalkerId,
+      field,
+      newValue,
+    });
 
     const {status} = response;
     return res.status(status).send(response);

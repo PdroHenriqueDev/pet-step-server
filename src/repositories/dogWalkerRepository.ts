@@ -495,6 +495,46 @@ class DogWalkerRepository {
       };
     }
   }
+
+  async updateDogWalker({
+    dogWalkerId,
+    field,
+    newValue,
+  }: {
+    dogWalkerId: string;
+    field: string;
+    newValue: unknown;
+  }): Promise<RepositoryResponse> {
+    try {
+      const updateFields = {
+        [field]: newValue,
+        updatedAt: new Date(),
+      };
+
+      const result = await this.dogWalkersCollection.updateOne(
+        {_id: new ObjectId(dogWalkerId)},
+        {$set: updateFields},
+      );
+
+      if (result.modifiedCount === 0) {
+        return {
+          status: 404,
+          data: 'Dog walker não encontrado ou nenhum campo foi modificado',
+        };
+      }
+
+      return {
+        status: 200,
+        data: 'Dog walker atualizado com sucesso',
+      };
+    } catch (error) {
+      console.log('Erro ao atualizar dog walker:', error);
+      return {
+        status: 500,
+        data: 'Erro interno ao atualizar dog walker',
+      };
+    }
+  }
 }
 
 export default new DogWalkerRepository();

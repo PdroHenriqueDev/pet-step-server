@@ -22,5 +22,6 @@ dogWalkerRouter.put(
   authenticateToken,
   DogWalker.updateAvailability,
 );
+dogWalkerRouter.put('/update', authenticateToken, DogWalker.updateField);
 
 export default dogWalkerRouter;
