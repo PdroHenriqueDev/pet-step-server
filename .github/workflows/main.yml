@@ -64,5 +64,8 @@ jobs:
       - name: Start containers with Docker Compose
         run: docker-compose up -d
 
-      - name: Clean up Docker
-        run: docker system prune -af
+      - name: Clean up unused Docker resources
+        run: |
+          docker volume prune -f
+          docker image prune -f
+          docker container prune -f
