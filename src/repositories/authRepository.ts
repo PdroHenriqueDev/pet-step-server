@@ -209,7 +209,7 @@ class AuthRepository {
         data: 'Senha redefinida com sucesso.',
       };
     } catch (error) {
-      console.error('Erro ao redefinir senha:', error);
+      console.log('Erro ao redefinir senha:', error);
       return {
         status: 500,
         data: 'Erro ao redefinir senha.',
