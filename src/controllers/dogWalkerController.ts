@@ -203,14 +203,7 @@ class DogWalker {
 
     const {field, newValue} = req.body;
 
-    const allowedFields = [
-      'name',
-      'lastName',
-      'email',
-      'phone',
-      'address',
-      'document',
-    ];
+    const allowedFields = ['name', 'lastName', 'phone', 'address'];
 
     if (!allowedFields.includes(field)) {
       return res
