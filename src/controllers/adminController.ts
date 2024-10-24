@@ -40,6 +40,10 @@ class Admin {
     req: Request,
     res: Response,
   ): Promise<Response<ApiResponse>> {
+    if (req.user.role !== UserRole.Admin) {
+      return res.status(500).send({error: 'Error'});
+    }
+
     const {email, newPassword, role} = req.body;
 
     if (!email || !newPassword || !role) {

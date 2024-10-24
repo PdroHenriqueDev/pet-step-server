@@ -54,7 +54,7 @@ class AdminRepository {
         data,
       };
     } catch (error) {
-      console.error('Error adding owner:', error);
+      console.log('Error adding owner:', error);
       return {
         status: 500,
         data: 'Error',
