@@ -49,15 +49,11 @@ class DogWalkerRepository {
 
   currentDate = new Date();
 
-  async addDogWalker(
-    dogWalker: DogWalkerProps,
-    // reqIp: string,
-  ): Promise<RepositoryResponse> {
+  async addDogWalker(dogWalker: DogWalkerProps): Promise<RepositoryResponse> {
     try {
       // this.dogWalkersCollection.createIndex({location: '2dsphere'});
 
-      const {password, email, document, name, lastName, address, phone} =
-        dogWalker;
+      const {password, email, document} = dogWalker;
 
       const dogWalkerExists = await this.dogWalkersCollection.findOne({
         $or: [{email}, {document}],
@@ -70,36 +66,12 @@ class DogWalkerRepository {
         };
       }
 
-      // const createStripeAccount = await StripeUtils.createAccount({
-      //   email: email as string,
-      //   firstName: name,
-      //   lastName,
-      //   dob: {
-      //     day: 20,
-      //     month: 10,
-      //     year: 1999,
-      //   },
-      //   address: {
-      //     city: address.city,
-      //     country: 'BR',
-      //     state: address.state,
-      //     postal_code: address.zipCode,
-      //     line1: address.street,
-      //   },
-      //   reqIp,
-      //   idNumber: String(document),
-      //   phone,
-      // });
-
-      // const {id: stripeAccountId} = createStripeAccount;
-
       const salt = await genSalt();
       const hashedPassword = await hash(password!, salt);
 
       const newDogWalker = {
         ...dogWalker,
         password: hashedPassword,
-        // stripeAccountId,
         rate: 5,
         totalRatings: 0,
         isOnline: false,
@@ -343,42 +315,6 @@ class DogWalkerRepository {
     }
   }
 
-  // async sendNotificationDogWalker({
-  //   dogWalkerId,
-  //   title,
-  //   body,
-  // }: {
-  //   dogWalkerId: string;
-  //   title: string;
-  //   body: string;
-  // }) {
-  //   try {
-  //     const dogWalkerResult = await this.findDogWalkerById(dogWalkerId);
-
-  //     if (dogWalkerResult.status !== 200 || !dogWalkerResult.data) {
-  //       return {
-  //         status: 404,
-  //         error: 'Dog walker não encontrado',
-  //       };
-  //     }
-
-  //     const {token} = dogWalkerResult.data as any;
-
-  //     const result = await FirebaseRepository.sendNotification({
-  //       title,
-  //       body,
-  //       token,
-  //     });
-
-  //     return {
-  //       status: 200,
-  //       data: result,
-  //     };
-  //   } catch (err) {
-  //     console.log('Got error =>', err);
-  //   }
-  // }
-
   async saveFeedback({
     dogWalkerId,
     rate,
@@ -532,6 +468,260 @@ class DogWalkerRepository {
       return {
         status: 500,
         data: 'Erro interno ao atualizar dog walker',
+      };
+    }
+  }
+
+  async addStripeAccount({
+    dogWalkerId,
+    reqIp,
+    dob,
+    bankCode,
+    agencyNumber,
+    accountNumber,
+  }: {
+    dogWalkerId: string;
+    reqIp: string;
+    bankCode: string;
+    agencyNumber: string;
+    accountNumber: string;
+    dob: {
+      day: number;
+      month: number;
+      year: number;
+    };
+  }): Promise<RepositoryResponse> {
+    try {
+      const dogWalkerExists = await this.dogWalkersCollection.findOne({
+        _id: new ObjectId(dogWalkerId),
+      });
+
+      if (!dogWalkerExists) {
+        return {
+          status: 400,
+          data: 'Dog Walker não existe',
+        };
+      }
+
+      const {email, name, lastName, phone, address, document, stripeAccountId} =
+        dogWalkerExists;
+
+      let stripeAccountIdToUse = stripeAccountId;
+      if (!stripeAccountIdToUse) {
+        const createStripeAccount = await StripeUtils.createAccount({
+          email: email as string,
+          firstName: name,
+          lastName,
+          dob,
+          address: {
+            city: address.city,
+            country: 'BR',
+            state: address.state,
+            postal_code: address.zipCode,
+            line1: address.street,
+          },
+          reqIp,
+          idNumber: String(document),
+          phone,
+        });
+
+        stripeAccountIdToUse = createStripeAccount.id;
+      }
+
+      await this.dogWalkersCollection.updateOne(
+        {_id: new ObjectId(dogWalkerId)},
+        {
+          $set: {
+            stripeAccountId: stripeAccountIdToUse,
+            birthdate: {
+              day: dob.day,
+              month: dob.month,
+              year: dob.year,
+            },
+            bank: {
+              bankCode,
+              agencyNumber,
+              accountNumber,
+            },
+            updatedAt: this.currentDate,
+          },
+        },
+      );
+
+      await StripeUtils.addExternalAccount({
+        accountId: stripeAccountIdToUse,
+        name,
+        lastName,
+        routingNumber: `${bankCode}-${agencyNumber}`,
+        accountNumber,
+      });
+
+      return {
+        status: 200,
+        data: 'Conta adicionada com sucesso',
+      };
+    } catch (error) {
+      console.log('Erro ao adicionar conta Stripe:', error);
+      return {
+        status: 500,
+        data: 'Erro interno',
+      };
+    }
+  }
+
+  private getTranslatedMessage(requirement: string): string {
+    const messages: {[key: string]: string} = {
+      'individual.verification.document':
+        'É necessário enviar um documento de verificação.',
+      'individual.verification.additional_document':
+        'É necessário enviar um documento adicional de verificação.',
+    };
+
+    return messages[requirement] || 'Requisito desconhecido.';
+  }
+
+  async accountRequirements(dogWalkerId: string) {
+    try {
+      const dogWalkerExists = await this.dogWalkersCollection.findOne({
+        _id: new ObjectId(dogWalkerId),
+      });
+
+      if (!dogWalkerExists) {
+        return {
+          status: 400,
+          data: 'Dog Walker não existe',
+        };
+      }
+
+      const errorMessages: string[] = [];
+      const {stripeAccountId} = dogWalkerExists;
+
+      if (!stripeAccountId) {
+        errorMessages.push('É necessário adicionar uma conta');
+        return {
+          status: 200,
+          data: errorMessages,
+        };
+      }
+
+      const stripeRequirements =
+        await StripeUtils.accountRequirements(stripeAccountId);
+
+      if (stripeRequirements && stripeRequirements.length > 0) {
+        stripeRequirements.forEach(requirement => {
+          errorMessages.push(this.getTranslatedMessage(requirement));
+        });
+
+        return {
+          status: 200,
+          data: errorMessages,
+        };
+      }
+
+      return {
+        status: 200,
+        data: errorMessages,
+      };
+    } catch (error) {
+      console.log('Erro dog walkers account:', error);
+      return {
+        status: 500,
+        data: 'Erro interno',
+      };
+    }
+  }
+
+  async accountDocumentUpload(
+    dogWalkerId: string,
+    document: Express.Multer.File,
+  ) {
+    try {
+      const dogWalkerExists = await this.dogWalkersCollection.findOne({
+        _id: new ObjectId(dogWalkerId),
+      });
+
+      if (!dogWalkerExists) {
+        return {
+          status: 400,
+          data: 'Dog Walker não existe',
+        };
+      }
+
+      const {stripeAccountId} = dogWalkerExists;
+
+      if (!stripeAccountId) {
+        return {
+          status: 400,
+          data: 'É necessário adicionar uma conta primeiro.',
+        };
+      }
+
+      await StripeUtils.uploadDocument(stripeAccountId, document);
+
+      await this.dogWalkersCollection.updateOne(
+        {_id: new ObjectId(dogWalkerId)},
+        {$set: {'bank.bankDocumentSent': true}},
+      );
+
+      return {
+        status: 200,
+        data: 'Documento enviado com sucesso.',
+      };
+    } catch (error) {
+      console.log('Erro uploading dog walkers accounts document:', error);
+      return {
+        status: 500,
+        data: 'Erro interno',
+      };
+    }
+  }
+
+  async accountCheckStatus(dogWalkerId: string) {
+    try {
+      const dogWalkerExists = await this.dogWalkersCollection.findOne({
+        _id: new ObjectId(dogWalkerId),
+      });
+
+      if (!dogWalkerExists) {
+        return {
+          status: 400,
+          data: 'Dog Walker não existe',
+        };
+      }
+
+      const {stripeAccountId} = dogWalkerExists;
+
+      if (!stripeAccountId) {
+        return {
+          status: 400,
+          data: 'É necessário adicionar uma conta primeiro.',
+        };
+      }
+
+      const status = await StripeUtils.checkDocumentStatus(stripeAccountId);
+
+      const message: {[key: string]: string} = {
+        unverified: 'Envie novamente',
+        pending: 'Aguarde a confirmação',
+        verified: 'Verificado com sucesso',
+      };
+
+      if (status === 'verified') {
+        await this.dogWalkersCollection.updateOne(
+          {_id: new ObjectId(dogWalkerId)},
+          {$set: {'bank.bankDocumentVerified': true}},
+        );
+      }
+
+      return {
+        status: 200,
+        data: message[status as string],
+      };
+    } catch (error) {
+      console.log('Erro checking dog walkers account status:', error);
+      return {
+        status: 500,
+        data: 'Erro interno',
       };
     }
   }

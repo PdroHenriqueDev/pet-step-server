@@ -208,14 +208,12 @@ class WalkController {
   }
 
   async walksByDogWalker(req: Request, res: Response) {
-    const dogWalkerId = req.user.id;
+    const dogWalkerId = req?.user?.id;
     const {page} = req.query;
 
     if (!dogWalkerId) {
       return res.status(400).send({data: 'Requisição inválida'});
     }
-
-    console.log('got here dogWalkerId =>', dogWalkerId);
 
     const pageNumber = parseInt(page as string, 10) || 1;
 

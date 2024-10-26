@@ -1,6 +1,4 @@
 import stripePackage from 'stripe';
-import fs from 'fs';
-import path from 'path';
 
 class StripUtils {
   get stripe() {
@@ -157,18 +155,13 @@ class StripUtils {
     return requirements;
   }
 
-  async uploadDocument(accountId: string) {
-    const filePath = path.resolve(
-      __dirname,
-      '../../fileStripeTest/success.png',
-    );
-
+  async uploadDocument(accountId: string, document: Express.Multer.File) {
     const file = await this.stripe.files.create(
       {
         purpose: 'identity_document',
         file: {
-          data: fs.readFileSync(filePath),
-          name: 'file_name.jpg',
+          data: document.buffer,
+          name: document.originalname,
           type: 'application/octet-stream',
         },
       },
@@ -194,13 +187,13 @@ class StripUtils {
     accountId,
     name,
     lastName,
-    bankCode,
+    routingNumber,
     accountNumber,
   }: {
     accountId: string;
     name: string;
     lastName: string;
-    bankCode: string;
+    routingNumber: string;
     accountNumber: string;
   }) {
     const updatedAccount = await this.stripe.accounts.update(accountId, {
@@ -210,8 +203,8 @@ class StripUtils {
         currency: 'BRL',
         account_holder_name: `${name} ${lastName}`,
         account_holder_type: 'individual',
-        routing_number: bankCode,
-        account_number: accountNumber,
+        routing_number: '110-0000',
+        account_number: '0001234',
       },
     });
 
@@ -272,6 +265,14 @@ class StripUtils {
       status: 200,
       data: 'Reembolso processado e transferência revertida com sucesso',
     };
+  }
+
+  async checkDocumentStatus(accountId: string) {
+    const account = await this.stripe.accounts.retrieve(accountId);
+
+    const status = account.individual?.verification?.status;
+
+    return status;
   }
 }
 

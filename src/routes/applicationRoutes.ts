@@ -1,7 +1,6 @@
 import express from 'express';
 import multer from 'multer';
 import ApplicationController from '../controllers/applicationController';
-import {authenticateToken} from '../middleware/authenticateToken';
 
 const applicationRouter = express.Router();
 
