@@ -31,6 +31,12 @@ dogWalkerRouter.post(
 );
 dogWalkerRouter.post('/', DogWalker.store);
 dogWalkerRouter.post('/:id/feedback', DogWalker.feedback);
+dogWalkerRouter.post(
+  '/profile-image',
+  authenticateToken,
+  upload.single('profile'),
+  DogWalker.imageProfile,
+);
 
 dogWalkerRouter.put(
   '/update-location/:id',

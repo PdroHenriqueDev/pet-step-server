@@ -38,6 +38,7 @@ class ApplicationRepository {
         key,
         storageClass: 'STANDARD_IA',
         fileType: file.mimetype,
+        bucketName: process.env.S3_BUCKET_NAME as string,
       });
 
       const documentData = {

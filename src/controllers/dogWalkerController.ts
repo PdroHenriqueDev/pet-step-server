@@ -290,6 +290,33 @@ class DogWalker {
     const {status} = response;
     return res.status(status).send(response);
   }
+
+  async imageProfile(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const file = req.file;
+
+    if (!file) {
+      return res
+        .status(400)
+        .json({status: 400, data: 'Nenhum arquivo enviado'});
+    }
+
+    const userId = req?.user?.id;
+
+    if (!userId) {
+      return res.status(401).send({
+        status: 401,
+        data: 'Faça login novamente',
+      });
+    }
+
+    const response = await DogWalkerRepository.updateProfileImage(userId, file);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
 }
 
 export default new DogWalker();

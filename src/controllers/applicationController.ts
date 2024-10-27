@@ -1,7 +1,6 @@
 import {Request, Response} from 'express';
 import {ApiResponse} from '../interfaces/apitResponse';
 import ApplicationRepository from '../repositories/applicationRepository';
-import jwt, {JwtPayload} from 'jsonwebtoken';
 import {Availability, DogExperience, Transport} from '../types/application';
 
 class ApplicationController {

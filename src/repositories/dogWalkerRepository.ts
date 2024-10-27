@@ -9,6 +9,7 @@ import {RepositoryResponse} from '../interfaces/apitResponse';
 import {hash, genSalt} from 'bcrypt';
 import StripeUtils from '../utils/stripe';
 import {DogWalkerApplicationStatus} from '../enums/dogWalkerApplicationStatus';
+import {uploadToS3} from '../utils/s3Utils';
 
 class DogWalkerRepository {
   get db() {
@@ -722,6 +723,55 @@ class DogWalkerRepository {
       return {
         status: 500,
         data: 'Erro interno',
+      };
+    }
+  }
+
+  async updateProfileImage(
+    dogWalkerId: string,
+    file: Express.Multer.File,
+  ): Promise<RepositoryResponse> {
+    try {
+      const dogWalkerExists = await this.dogWalkersCollection.findOne({
+        _id: new ObjectId(dogWalkerId),
+      });
+
+      if (!dogWalkerExists) {
+        return {
+          status: 400,
+          data: 'Dog Walker não existe',
+        };
+      }
+
+      const uploadResult = await uploadToS3({
+        fileBuffer: file.buffer,
+        key: dogWalkerId,
+        storageClass: 'STANDARD',
+        fileType: file.mimetype,
+        bucketName: process.env.S3_BUCKET_PROFILE as string,
+      });
+
+      const publicUrl = uploadResult.Location;
+
+      await this.dogWalkersCollection.updateOne(
+        {_id: new ObjectId(dogWalkerId)},
+        {
+          $set: {
+            profileUrl: publicUrl,
+            updatedAt: new Date(),
+          },
+        },
+      );
+
+      return {
+        status: 200,
+        data: publicUrl,
+      };
+    } catch (error) {
+      console.log('Error updating profile image:', error);
+      return {
+        status: 500,
+        data: 'Erro interno ao atualizar a imagem de perfil',
       };
     }
   }
