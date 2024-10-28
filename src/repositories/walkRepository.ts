@@ -492,8 +492,8 @@ class WalkRepository {
 
       await FirebaseAdminUtil.createChat({
         chatId: requestId,
-        dogWalkerId: dogWalker._id,
-        ownerId: owner._id,
+        dogWalkerId: dogWalker._id.toString(),
+        ownerId: owner._id.toString(),
         dogWalkerToken: dogWalkerExists.deviceToken,
         ownerToken: ownerExists?.deviceToken ?? '',
       });
