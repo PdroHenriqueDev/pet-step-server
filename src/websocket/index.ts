@@ -23,6 +23,11 @@ export class SocketInit {
         const requestId = socket.handshake.query?.request_id as string;
         if (requestId) {
           const {longitude, latitude} = data;
+          console.log('User sent location', {
+            requestId,
+            longitude,
+            latitude,
+          });
           this.publishEventToRoom(requestId, SocketResponse.DogWalkerLocation, {
             longitude,
             latitude,
