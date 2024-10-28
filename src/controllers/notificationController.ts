@@ -7,7 +7,7 @@ import NotificatinUtils from '../utils/notification';
 class NotificationController {
   async updateDeviceToken(req: Request, res: Response): Promise<Response> {
     const {deviceToken, role} = req.body;
-    const userId = req.user.id;
+    const userId = req?.user?.id;
 
     if (!deviceToken || !userId || !role) {
       return res.status(400).send({

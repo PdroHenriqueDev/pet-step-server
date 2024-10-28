@@ -16,14 +16,16 @@ export const uploadToS3 = async ({
   key,
   storageClass,
   fileType,
+  bucketName,
 }: {
   fileBuffer: Buffer;
   key: string;
   storageClass: StorageClass;
   fileType: string;
+  bucketName: string;
 }): Promise<ManagedUpload.SendData> => {
   const params: PutObjectRequest = {
-    Bucket: process.env.S3_BUCKET_NAME as string,
+    Bucket: bucketName,
     Key: key,
     Body: fileBuffer,
     StorageClass: storageClass,

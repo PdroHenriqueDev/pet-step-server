@@ -108,28 +108,28 @@ class PaymentController {
     }
   }
 
-  async uploadAccountDocument(
-    req: Request,
-    res: Response,
-  ): Promise<Response<ApiResponse>> {
-    const {accountId} = req.params;
-    if (!accountId) return res.status(400).send('Requisição inválida');
-    try {
-      await StripeUtils.uploadDocument(accountId);
+  // async uploadAccountDocument(
+  //   req: Request,
+  //   res: Response,
+  // ): Promise<Response<ApiResponse>> {
+  //   const {accountId} = req.params;
+  //   if (!accountId) return res.status(400).send('Requisição inválida');
+  //   try {
+  //     await StripeUtils.uploadDocument(accountId);
 
-      const response = {
-        status: 200,
-        data: 'Documento enviado',
-      };
+  //     const response = {
+  //       status: 200,
+  //       data: 'Documento enviado',
+  //     };
 
-      const {status, data} = response;
+  //     const {status, data} = response;
 
-      return res.status(status).send(data);
-    } catch (error) {
-      console.log('Erro uploading document:', error);
-      return res.status(500).send('Error');
-    }
-  }
+  //     return res.status(status).send(data);
+  //   } catch (error) {
+  //     console.log('Erro uploading document:', error);
+  //     return res.status(500).send('Error');
+  //   }
+  // }
 
   async accountBalance(
     req: Request,
@@ -207,9 +207,15 @@ class PaymentController {
     const {accountId} = req.params;
     if (!accountId) return res.status(400).send('Requisição inválida');
 
-    const {name, lastName, bankCode, accountNumber} = req.body;
+    const {name, lastName, bankCode, agencyNumber, accountNumber} = req.body;
 
-    const requiredFields = ['name', 'lastName', 'bankCode', 'accountNumber'];
+    const requiredFields = [
+      'name',
+      'lastName',
+      'bankCode',
+      'agencyNumber',
+      'accountNumber',
+    ];
     const missingField = requiredFields.find(field => !req.body[field]);
 
     if (missingField) {
@@ -223,7 +229,7 @@ class PaymentController {
         accountId,
         name,
         lastName,
-        bankCode,
+        routingNumber: `${bankCode}-${agencyNumber}`,
         accountNumber,
       });
 

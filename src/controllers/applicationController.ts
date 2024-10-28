@@ -1,7 +1,6 @@
 import {Request, Response} from 'express';
 import {ApiResponse} from '../interfaces/apitResponse';
 import ApplicationRepository from '../repositories/applicationRepository';
-import jwt, {JwtPayload} from 'jsonwebtoken';
 import {Availability, DogExperience, Transport} from '../types/application';
 
 class ApplicationController {
@@ -23,7 +22,7 @@ class ApplicationController {
           .json({status: 400, data: 'Nenhum arquivo enviado'});
       }
 
-      const userId = req.user.id;
+      const userId = req?.user?.id;
 
       if (!userId) {
         return res.status(401).send({
@@ -53,7 +52,7 @@ class ApplicationController {
     req: Request,
     res: Response,
   ): Promise<Response<ApiResponse>> {
-    const response = await ApplicationRepository.verifyDocuments(req.user.id);
+    const response = await ApplicationRepository.verifyDocuments(req?.user?.id);
 
     const {status, data} = response;
     return res.status(status).send(data);
@@ -72,7 +71,7 @@ class ApplicationController {
     }
 
     const response = await ApplicationRepository.aboutMeDogWalker(
-      req.user.id,
+      req?.user?.id,
       aboutMe,
     );
 
@@ -107,7 +106,7 @@ class ApplicationController {
     }
 
     const response = await ApplicationRepository.addProfile({
-      dogWalkerId: req.user.id,
+      dogWalkerId: req?.user?.id,
       availability,
       transport,
       dogExperience,
@@ -134,7 +133,7 @@ class ApplicationController {
   }
 
   async deactivateAccount(req: Request, res: Response): Promise<Response> {
-    const userId = req.user.id;
+    const userId = req?.user?.id;
 
     const response = await ApplicationRepository.deactivateAccount(userId);
     const {status} = response;

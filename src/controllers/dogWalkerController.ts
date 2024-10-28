@@ -34,12 +34,7 @@ class DogWalker {
       password,
     };
 
-    // const reqIp = req.ip;
-
-    const response = await DogWalkerRepository.addDogWalker(
-      walker,
-      // reqIp as string,
-    );
+    const response = await DogWalkerRepository.addDogWalker(walker);
     const {status} = response;
 
     return res.status(status).send(response);
@@ -86,29 +81,6 @@ class DogWalker {
     const {status} = response;
     return res.status(status).send(response);
   }
-
-  // async notification(req: Request, res: Response) {
-  //   const {id} = req.params;
-  //   const {title, body} = req.body;
-
-  //   if (!id) {
-  //     return res.status(400).send({error: 'Dog walker não encontrado'});
-  //   }
-
-  //   if (!title || !body) {
-  //     return res.status(400).send({error: 'Requisição inválida'});
-  //   }
-
-  //   const response = await DogWalkerRepository.sendNotificationDogWalker({
-  //     dogWalkerId: id,
-  //     title,
-  //     body,
-  //   });
-
-  //   const {status, data, error} = response as any;
-
-  //   return res.status(status).send(data ?? error);
-  // }
 
   async feedback(req: Request, res: Response) {
     const {id} = req.params;
@@ -199,7 +171,7 @@ class DogWalker {
     req: Request,
     res: Response,
   ): Promise<Response<ApiResponse>> {
-    const dogWalkerId = req.user.id;
+    const dogWalkerId = req?.user?.id;
 
     const {field, newValue} = req.body;
 
@@ -220,6 +192,127 @@ class DogWalker {
       field,
       newValue,
     });
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async addAccount(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const dogWalkerId = req?.user?.id;
+    const reqIp = req.ip;
+    const {bankCode, agencyNumber, accountNumber, birthdate} = req.body;
+
+    const requiredFields = [
+      'bankCode',
+      'agencyNumber',
+      'accountNumber',
+      'birthdate',
+    ];
+
+    const missingField = requiredFields.find(field => !req.body[field]);
+    if (missingField || !dogWalkerId) {
+      return res.status(400).send({status: 400, data: 'Requsição inválida'});
+    }
+
+    if (!reqIp) {
+      console.log('Error getting req ip');
+      return res.status(500).send({status: 500, data: 'Erro'});
+    }
+
+    const response = await DogWalkerRepository.addStripeAccount({
+      dogWalkerId,
+      reqIp,
+      bankCode,
+      agencyNumber,
+      accountNumber,
+      dob: birthdate,
+    });
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async accountPendingItems(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const dogWalkerId = req?.user?.id;
+    if (!dogWalkerId) {
+      return res.status(400).send({status: 400, data: 'Requsição inválida'});
+    }
+
+    const response = await DogWalkerRepository.accountRequirements(dogWalkerId);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async accountDocument(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const dogWalkerId = req?.user?.id;
+    if (!dogWalkerId) {
+      return res.status(400).send({status: 400, data: 'Requsição inválida'});
+    }
+
+    const file = req.file;
+
+    if (!file) {
+      return res
+        .status(400)
+        .json({status: 400, data: 'Nenhum arquivo enviado'});
+    }
+
+    const response = await DogWalkerRepository.accountDocumentUpload(
+      dogWalkerId,
+      file,
+    );
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async accountStatus(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const dogWalkerId = req?.user?.id;
+    if (!dogWalkerId) {
+      return res.status(400).send({status: 400, data: 'Requsição inválida'});
+    }
+
+    const response = await DogWalkerRepository.accountCheckStatus(dogWalkerId);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async imageProfile(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const file = req.file;
+
+    if (!file) {
+      return res
+        .status(400)
+        .json({status: 400, data: 'Nenhum arquivo enviado'});
+    }
+
+    const userId = req?.user?.id;
+
+    if (!userId) {
+      return res.status(401).send({
+        status: 401,
+        data: 'Faça login novamente',
+      });
+    }
+
+    const response = await DogWalkerRepository.updateProfileImage(userId, file);
 
     const {status} = response;
     return res.status(status).send(response);
