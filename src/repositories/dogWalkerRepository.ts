@@ -143,6 +143,37 @@ class DogWalkerRepository {
     latitude: string;
   }): Promise<RepositoryResponse> {
     try {
+      const dogWalkerExists = await this.dogWalkersCollection.findOne({
+        _id: new ObjectId(dogWalkerId),
+      });
+
+      if (!dogWalkerExists) {
+        return {
+          status: 400,
+          data: 'Dog Walker não existe',
+        };
+      }
+
+      const {stripeAccountId, bank} = dogWalkerExists;
+
+      if (!stripeAccountId) {
+        return {
+          status: 400,
+          data: 'Você precisa adicionar uma conta bancária para que possa receber os valores dos passeios.',
+        };
+      }
+
+      if (!bank?.bankDocumentVerified) {
+        const status = await StripeUtils.checkDocumentStatus(stripeAccountId);
+
+        if (status !== 'verified') {
+          return {
+            status: 400,
+            data: 'Sua conta bancária precisa ser verificada para que você possa receber os valores dos passeios.',
+          };
+        }
+      }
+
       const updateFields: {
         isOnline: boolean;
         updatedAt: Date;
