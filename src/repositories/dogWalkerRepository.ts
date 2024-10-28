@@ -159,7 +159,7 @@ class DogWalkerRepository {
       if (!stripeAccountId) {
         return {
           status: 400,
-          data: 'Você precisa adicionar uma conta bancária para que possa receber os valores dos passeios',
+          data: 'Você precisa adicionar uma conta bancária para que possa receber os valores dos passeios.',
         };
       }
 
@@ -169,7 +169,7 @@ class DogWalkerRepository {
         if (status !== 'verified') {
           return {
             status: 400,
-            data: 'Sua conta bancária precisa ser verificada para que você possa receber os valores dos passeios',
+            data: 'Sua conta bancária precisa ser verificada para que você possa receber os valores dos passeios.',
           };
         }
       }
