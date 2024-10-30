@@ -1,6 +1,5 @@
 import AWS from 'aws-sdk';
 import dotenv from 'dotenv';
-import {UserRole} from '../enums/role';
 
 dotenv.config();
 
@@ -13,13 +12,11 @@ const ses = new AWS.SES({
 export async function sendPasswordResetEmail({
   to,
   token,
-  role,
 }: {
   to: string;
   token: string;
-  role: UserRole;
 }) {
-  const resetLink = `${process.env?.PET_STEP_FRONT}/reset-password?token=${token}&role=${role}`;
+  const resetLink = `${process.env?.PET_STEP_FRONT}/reset-password?token=${token}`;
 
   const params = {
     Source: 'noreply@petstepapp.com',
@@ -33,6 +30,7 @@ export async function sendPasswordResetEmail({
           Data: `<p>Olá,</p>
                  <p>Você solicitou a redefinição de sua senha. Clique no link abaixo para redefinir sua senha:</p>
                  <a href="${resetLink}">Redefinir senha</a>
+                 <p><strong>Importante:</strong> O link é válido por apenas 1 hora. Após esse período, ele expirará e você precisará solicitar um novo link para redefinir sua senha.</p>
                  <p>Se você não solicitou a redefinição, ignore este e-mail.</p>`,
         },
       },
@@ -51,7 +49,7 @@ export async function sendPasswordResetEmail({
       data: 'Email enviado com sucesso',
     };
   } catch (error) {
-    console.log('Erro ao enviar o email:', error);
+    console.log('Erro sending email:', error);
     return {
       status: 500,
       data: 'Erro ao enviar o email:',

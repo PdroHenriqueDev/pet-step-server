@@ -29,8 +29,6 @@ const io = new Server(server, {
   },
 });
 
-const port = 3000;
-
 app.use('/', routes);
 
 new SocketInit(io);
@@ -40,7 +38,7 @@ new SocketInit(io);
     const mongoConnection = MongoConnection.getInstance();
     await mongoConnection.initialize();
 
-    server.listen(port, () => {
+    server.listen(process.env.APP_PORT, () => {
       console.log('Server is running 🔥');
     });
   } catch (error) {

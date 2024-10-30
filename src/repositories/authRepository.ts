@@ -1,4 +1,4 @@
-import {compare, hash} from 'bcrypt';
+import {compare, genSalt, hash} from 'bcrypt';
 import MongoConnection from '../database/mongoConnection';
 import {UserRole} from '../enums/role';
 import {generateAccessToken, generateRefreshToken} from '../utils/authToken';
@@ -8,6 +8,7 @@ import jwt, {JwtPayload} from 'jsonwebtoken';
 import {ObjectId} from 'mongodb';
 import {DogWalkerApplicationStatus} from '../enums/dogWalkerApplicationStatus';
 import FirebaseAdminUtil from '../utils/firebaseAdmin';
+import {UserStatus} from '../enums/userStatus';
 
 class AuthRepository {
   get db() {
@@ -142,7 +143,6 @@ class AuthRepository {
       const emailResult = await sendPasswordResetEmail({
         to: email,
         token: resetToken,
-        role,
       });
 
       const {status, data} = emailResult;
@@ -163,11 +163,9 @@ class AuthRepository {
   async resetPassoword({
     newPassword,
     token,
-    role,
   }: {
     newPassword: string;
     token: string;
-    role: UserRole;
   }) {
     try {
       const decoded = jwt.verify(
@@ -183,6 +181,7 @@ class AuthRepository {
       }
 
       const userId = decoded.id;
+      const role = decoded.role;
 
       const collection =
         role === UserRole.DogWalker
@@ -197,7 +196,8 @@ class AuthRepository {
         };
       }
 
-      const hashedPassword = await hash(newPassword, 10);
+      const salt = await genSalt();
+      const hashedPassword = await hash(newPassword, salt);
 
       await collection.updateOne(
         {_id: new ObjectId(userId)},
@@ -208,11 +208,52 @@ class AuthRepository {
         status: 200,
         data: 'Senha redefinida com sucesso.',
       };
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message?.includes('jwt expired')) {
+        return {
+          status: 401,
+          data: 'O link para redefinir a senha expirou. Por favor, solicite um novo link.',
+        };
+      }
+
       console.log('Erro ao redefinir senha:', error);
+
       return {
         status: 500,
         data: 'Erro ao redefinir senha.',
+      };
+    }
+  }
+
+  async deleteAccount(
+    dogwalkerId: string,
+    role: UserRole,
+  ): Promise<RepositoryResponse> {
+    try {
+      const collection =
+        role === UserRole.DogWalker
+          ? this.dogWalkersCollection
+          : this.ownerCollection;
+
+      collection.updateOne(
+        {_id: new ObjectId(dogwalkerId)},
+        {
+          $set: {
+            status: UserStatus.Deactivated,
+            updatedAt: this.currentDate,
+          },
+        },
+      );
+
+      return {
+        status: 200,
+        data: 'Conta desativadas com sucesso',
+      };
+    } catch (error) {
+      console.log('Erro deleting account', error);
+      return {
+        status: 500,
+        data: 'Erro ao desativar conta',
       };
     }
   }

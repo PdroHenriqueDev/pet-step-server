@@ -350,8 +350,6 @@ class WalkRepository {
       });
 
       if (!requestRide) {
-        await this.handleInvalidRideRequest(requestId);
-
         this.socket.publishEventToRoom(
           requestId,
           SocketResponse.Walk,
@@ -503,7 +501,7 @@ class WalkRepository {
         data: requestId,
       };
     } catch (error) {
-      console.error(`Error aceitando o passeio ${requestId}:`, error);
+      console.log(`Error accepting walk ${requestId}:`, error);
       await this.handleFailedRideRequest(requestId, WalkEvents.SERVER_ERROR);
 
       return {
