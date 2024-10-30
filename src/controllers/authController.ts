@@ -116,6 +116,23 @@ class AuthController {
 
     return res.status(status).send(data);
   }
+
+  async removeAccount(req: Request, res: Response): Promise<Response> {
+    const {id, role} = req.user;
+
+    if (!id || !role) {
+      return res.status(400).send({
+        status: 400,
+        data: 'Requisição inválida',
+      });
+    }
+
+    const response = await AuthRepository.deleteAccount(id, role);
+
+    const {status} = response;
+
+    return res.status(status).send(response);
+  }
 }
 
 export default new AuthController();

@@ -8,6 +8,7 @@ import jwt, {JwtPayload} from 'jsonwebtoken';
 import {ObjectId} from 'mongodb';
 import {DogWalkerApplicationStatus} from '../enums/dogWalkerApplicationStatus';
 import FirebaseAdminUtil from '../utils/firebaseAdmin';
+import {UserStatus} from '../enums/userStatus';
 
 class AuthRepository {
   get db() {
@@ -213,6 +214,39 @@ class AuthRepository {
       return {
         status: 500,
         data: 'Erro ao redefinir senha.',
+      };
+    }
+  }
+
+  async deleteAccount(
+    dogwalkerId: string,
+    role: UserRole,
+  ): Promise<RepositoryResponse> {
+    try {
+      const collection =
+        role === UserRole.DogWalker
+          ? this.dogWalkersCollection
+          : this.ownerCollection;
+
+      collection.updateOne(
+        {_id: new ObjectId(dogwalkerId)},
+        {
+          $set: {
+            status: UserStatus.Deactivated,
+            updatedAt: this.currentDate,
+          },
+        },
+      );
+
+      return {
+        status: 200,
+        data: 'Conta desativadas com sucesso',
+      };
+    } catch (error) {
+      console.log('Erro deleting account', error);
+      return {
+        status: 500,
+        data: 'Erro ao desativar conta',
       };
     }
   }
