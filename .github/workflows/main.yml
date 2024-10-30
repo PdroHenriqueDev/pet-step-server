@@ -70,5 +70,5 @@ jobs:
       - name: Clean up unused Docker resources
         run: |
           docker volume prune -f
-          docker image prune -f
+          docker image prune -a -f
           docker container prune -f
