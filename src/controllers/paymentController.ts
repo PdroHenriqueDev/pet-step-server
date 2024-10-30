@@ -140,9 +140,14 @@ class PaymentController {
     try {
       const balance = await StripeUtils.balance(accountId);
 
+      const {available, pending} = balance;
+
       const response = {
         status: 200,
-        data: balance,
+        data: {
+          available: available[0].amount,
+          pending: pending[0].amount,
+        },
       };
 
       const {status} = response;
