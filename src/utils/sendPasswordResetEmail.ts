@@ -16,7 +16,7 @@ export async function sendPasswordResetEmail({
   to: string;
   token: string;
 }) {
-  const resetLink = `${process.env?.PET_STEP_FRONT}/reset-password?token=${token}`;
+  const resetLink = `${process.env.PET_STEP_FRONT}/reset-password?token=${token}`;
 
   const params = {
     Source: 'noreply@petstepapp.com',
