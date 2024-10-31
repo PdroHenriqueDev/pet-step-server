@@ -8,6 +8,7 @@ authRouter.post('/login', AuthController.login);
 authRouter.post('/recovery-password', AuthController.forgotPassword);
 authRouter.post('/reset-password', AuthController.resetPassword);
 authRouter.post('/renew-token', AuthController.refreshToken);
+authRouter.post('/verify-email', AuthController.verifyEmail);
 
 authRouter.delete(
   '/remove-account',

@@ -132,6 +132,23 @@ class AuthController {
 
     return res.status(status).send(response);
   }
+
+  async verifyEmail(req: Request, res: Response): Promise<Response> {
+    const {token} = req.body;
+
+    if (!token) {
+      return res.status(400).send({
+        status: 400,
+        data: 'Requisição inválida',
+      });
+    }
+
+    const response = await AuthRepository.checkEmail(token);
+
+    const {status} = response;
+
+    return res.status(status).send(response);
+  }
 }
 
 export default new AuthController();

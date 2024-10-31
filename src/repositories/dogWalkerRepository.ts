@@ -1,6 +1,5 @@
 import {ObjectId} from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
-// import FirebaseRepository from './firebaseRepository';
 import {getDistance} from 'geolib';
 import {DogWalkerProps} from '../interfaces/dogWalker';
 import stripePackage from 'stripe';
@@ -10,6 +9,9 @@ import {hash, genSalt} from 'bcrypt';
 import StripeUtils from '../utils/stripe';
 import {DogWalkerApplicationStatus} from '../enums/dogWalkerApplicationStatus';
 import {uploadToS3} from '../utils/s3Utils';
+import {generateAccessToken} from '../utils/authToken';
+import {UserRole} from '../enums/role';
+import {sendEmailVerification} from '../utils/sendEmail';
 
 class DogWalkerRepository {
   get db() {
@@ -83,9 +85,19 @@ class DogWalkerRepository {
 
       const data = await this.dogWalkersCollection.insertOne(newDogWalker);
 
+      const emailToken = generateAccessToken(
+        data.insertedId,
+        UserRole.DogWalker,
+      );
+
+      await sendEmailVerification({
+        to: email as string,
+        token: emailToken,
+      });
+
       return {
         status: 201,
-        data,
+        data: 'Verifique seu e-mail antes de fazer login.',
       };
     } catch (error) {
       console.error('Error adding dog walker:', error);
