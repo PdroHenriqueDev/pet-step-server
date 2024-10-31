@@ -3,7 +3,10 @@ import MongoConnection from '../database/mongoConnection';
 import {UserRole} from '../enums/role';
 import {generateAccessToken, generateRefreshToken} from '../utils/authToken';
 import {RepositoryResponse} from '../interfaces/apitResponse';
-import {sendPasswordResetEmail} from '../utils/sendPasswordResetEmail';
+import {
+  sendEmailVerification,
+  sendPasswordResetEmail,
+} from '../utils/sendEmail';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 import {ObjectId} from 'mongodb';
 import {DogWalkerApplicationStatus} from '../enums/dogWalkerApplicationStatus';
@@ -52,6 +55,22 @@ class AuthRepository {
         return {
           status: 401,
           data: 'Credenciais inválidas.',
+        };
+      }
+
+      const {isEmailVerified} = user;
+
+      if (!isEmailVerified) {
+        const emailToken = generateAccessToken(user._id, role);
+
+        await sendEmailVerification({
+          to: email,
+          token: emailToken,
+        });
+
+        return {
+          status: 401,
+          data: 'Por favor, verifique seu e-mail antes de fazer login.',
         };
       }
 
@@ -176,7 +195,7 @@ class AuthRepository {
       if (!decoded) {
         return {
           status: 400,
-          data: 'Faça login novamente',
+          data: 'Requisição inválida',
         };
       }
 
@@ -216,8 +235,7 @@ class AuthRepository {
         };
       }
 
-      console.log('Erro ao redefinir senha:', error);
-
+      console.log('Erro reseting password:', error);
       return {
         status: 500,
         data: 'Erro ao redefinir senha.',
@@ -254,6 +272,61 @@ class AuthRepository {
       return {
         status: 500,
         data: 'Erro ao desativar conta',
+      };
+    }
+  }
+
+  async checkEmail(token: string) {
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET_ACCESS_TOKEN!,
+      ) as JwtPayload;
+
+      if (!decoded) {
+        return {
+          status: 400,
+          data: 'Requisição inválida.',
+        };
+      }
+
+      const userId = decoded.id;
+      const role = decoded.role;
+
+      const collection =
+        role === UserRole.DogWalker
+          ? this.dogWalkersCollection
+          : this.ownerCollection;
+      const user = await collection.findOne({_id: new ObjectId(userId)});
+
+      if (!user) {
+        return {
+          status: 404,
+          data: 'Usuário não encontrado.',
+        };
+      }
+
+      await collection.updateOne(
+        {_id: new ObjectId(userId)},
+        {$set: {isEmailVerified: true}},
+      );
+
+      return {
+        status: 200,
+        data: 'E-mail verificado com sucesso.',
+      };
+    } catch (error: any) {
+      if (error?.message?.includes('jwt expired')) {
+        return {
+          status: 401,
+          data: 'O link para verificar o email expirou. Por favor, solicite um novo link.',
+        };
+      }
+
+      console.log('Erro verifying email:', error);
+      return {
+        status: 500,
+        data: 'Erro ao redefinir senha.',
       };
     }
   }
