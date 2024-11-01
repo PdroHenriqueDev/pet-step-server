@@ -1,20 +1,42 @@
 import {Request, Response} from 'express';
 import OwnerRepository from '../repositories/ownerRepository';
+import {Owner as OwnerProps} from '../interfaces/owner';
 
 class Owner {
   async store(req: Request, res: Response) {
-    const owner = req.body;
+    const requiredFields = [
+      'name',
+      'lastName',
+      'document',
+      'email',
+      'password',
+      'address',
+      'phone',
+    ];
+    const missingField = requiredFields.find(field => !req.body[field]);
 
-    const {name, email} = owner;
-
-    if (!name || !email) {
-      return res.status(400).send({error: 'Requisição inválida'});
+    if (missingField) {
+      return res
+        .status(400)
+        .send({data: `O campo "${missingField}" é obrigatório.`});
     }
 
-    const response = await OwnerRepository.add(owner);
-    const {status, data} = response;
+    const {name, lastName, email, password, document, address, phone} =
+      req.body;
+    const owner: OwnerProps = {
+      name,
+      lastName,
+      email,
+      phone,
+      address,
+      document,
+      password,
+    };
 
-    return res.status(status).send(data);
+    const response = await OwnerRepository.add(owner);
+    const {status} = response;
+
+    return res.status(status).send(response);
   }
 
   async findById(req: Request, res: Response) {

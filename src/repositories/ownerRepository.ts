@@ -3,6 +3,11 @@ import MongoConnection from '../database/mongoConnection';
 import StripeUtils from '../utils/stripe';
 import {Owner} from '../interfaces/owner';
 import {RepositoryResponse} from '../interfaces/apitResponse';
+import {Dog} from '../interfaces/dog';
+import {genSalt, hash} from 'bcrypt';
+import {generateAccessToken} from '../utils/authToken';
+import {UserRole} from '../enums/role';
+import {sendEmailVerification} from '../utils/sendEmail';
 
 class OwnerRepository {
   get db() {
@@ -15,11 +20,13 @@ class OwnerRepository {
 
   currentDate = new Date();
 
-  async add(owner: any): Promise<RepositoryResponse> {
+  async add(owner: Owner): Promise<RepositoryResponse> {
     try {
-      const {email, name} = owner;
+      const {email, document, password} = owner;
 
-      const ownerExists = await this.ownerCollection.findOne({email});
+      const ownerExists = await this.ownerCollection.findOne({
+        $or: [{email}, {document}],
+      });
 
       if (ownerExists) {
         return {
@@ -28,26 +35,30 @@ class OwnerRepository {
         };
       }
 
-      const location = {
-        type: 'Point',
-        coordinates: [owner.longitude, owner.latitude],
-      };
+      // const location = {
+      //   type: 'Point',
+      //   coordinates: [owner.longitude, owner.latitude],
+      // };
 
-      const customerStripe = await StripeUtils.createStripeCustomer({
-        email,
-        name,
-      });
+      // const customerStripe = await StripeUtils.createStripeCustomer({
+      //   email,
+      //   name,
+      // });
 
-      const dogsWithId = owner.dogs.map((dog: any) => ({
-        ...dog,
-        _id: new ObjectId(),
-      }));
+      // const dogsWithId = owner.dogs.map((dog: Dog) => ({
+      //   ...dog,
+      //   _id: new ObjectId(),
+      // }));
+
+      const salt = await genSalt();
+      const hashedPassword = await hash(password!, salt);
 
       const newOwner = {
         ...owner,
-        stripeAccountId: customerStripe.id,
-        location,
-        dogs: dogsWithId,
+        password: hashedPassword,
+        // stripeAccountId: customerStripe.id,
+        // location,
+        // dogs: dogsWithId,
         rate: 5,
         totalRatings: 0,
         currentWalk: null,
@@ -57,9 +68,16 @@ class OwnerRepository {
 
       const data = await this.ownerCollection.insertOne(newOwner);
 
+      const emailToken = generateAccessToken(data.insertedId, UserRole.Owner);
+
+      await sendEmailVerification({
+        to: email as string,
+        token: emailToken,
+      });
+
       return {
         status: 201,
-        data,
+        data: 'Verifique seu e-mail antes de fazer login.',
       };
     } catch (error) {
       console.error('Error adding owner:', error);
@@ -109,9 +127,9 @@ class OwnerRepository {
         };
       }
 
-      const {customerStripe, defaultPayment} = owner;
+      const {customerStripeId, defaultPayment} = owner;
 
-      const paymentMethods = await StripeUtils.listPayments(customerStripe.id);
+      const paymentMethods = await StripeUtils.listPayments(customerStripeId!);
 
       const methods = paymentMethods.map(({id, card, type}) => {
         const {brand, exp_month, exp_year, last4, funding} = card ?? {};
