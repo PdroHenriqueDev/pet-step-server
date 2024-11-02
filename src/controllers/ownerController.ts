@@ -1,6 +1,8 @@
 import {Request, Response} from 'express';
 import OwnerRepository from '../repositories/ownerRepository';
 import {Owner as OwnerProps} from '../interfaces/owner';
+import axios from 'axios';
+import {calculateAverageWeight, getSizeCategory} from '../utils/dog';
 
 class Owner {
   async store(req: Request, res: Response) {
@@ -78,6 +80,105 @@ class Owner {
 
     const {status, data} = response;
     return res.status(status).send(data);
+  }
+
+  async listBreeds(req: Request, res: Response) {
+    try {
+      const response = await axios.get('https://api.thedogapi.com/v1/breeds', {
+        headers: {
+          'x-api-key': process.env.DOG_API_KEY as string,
+        },
+      });
+
+      const breeds = response.data.map((breed: any) => {
+        const averageWeight = calculateAverageWeight(breed.weight.metric);
+        const sizeCategory = getSizeCategory(averageWeight);
+
+        return {
+          name: breed.name,
+          size: sizeCategory,
+        };
+      });
+
+      return res.status(200).send({status: 200, data: breeds});
+    } catch (error) {
+      console.log('Error list breeds', error);
+      return res.status(500).send({status: 500, data: 'Erro ao buscar raças'});
+    }
+  }
+
+  async searchBreeds(req: Request, res: Response) {
+    const {query} = req.query;
+
+    if (!query) {
+      return res
+        .status(400)
+        .send({status: 400, data: 'O parâmetro "query" é obrigatório.'});
+    }
+
+    try {
+      const response = await axios.get(
+        `https://api.thedogapi.com/v1/breeds/search?q=${query}`,
+        {
+          headers: {
+            'x-api-key': process.env.DOG_API_KEY as string,
+          },
+        },
+      );
+
+      const breeds = response.data.map((breed: any) => {
+        const averageWeight = calculateAverageWeight(breed.weight.metric);
+        const sizeCategory = getSizeCategory(averageWeight);
+
+        return {
+          id: breed.id,
+          name: breed.name,
+          size: sizeCategory,
+        };
+      });
+
+      return res.status(200).send({status: 200, data: breeds});
+    } catch (error) {
+      console.log('Error searching breeds', error);
+      return res.status(500).send({status: 500, data: 'Erro ao buscar raças'});
+    }
+  }
+
+  async getBreedById(req: Request, res: Response) {
+    const {breedId} = req.params;
+
+    if (!breedId) {
+      return res
+        .status(400)
+        .send({status: 400, data: 'ID da raça é obrigatório'});
+    }
+
+    try {
+      const response = await axios.get(
+        `https://api.thedogapi.com/v1/breeds/${breedId}`,
+        {
+          headers: {
+            'x-api-key': process.env.DOG_API_KEY as string,
+          },
+        },
+      );
+
+      const breed = response.data;
+      const averageWeight = calculateAverageWeight(breed.weight.metric);
+      const sizeCategory = getSizeCategory(averageWeight);
+
+      const result = {
+        name: breed.name,
+        size: sizeCategory,
+      };
+
+      return res.status(200).send({status: 200, data: result});
+    } catch (error) {
+      console.log('Error fetching breed by ID', error);
+      return res
+        .status(500)
+        .send({status: 500, data: 'Erro ao buscar raça pelo ID'});
+    }
   }
 }
 
