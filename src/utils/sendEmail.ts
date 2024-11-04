@@ -31,7 +31,8 @@ export async function sendPasswordResetEmail({
                  <p>Você solicitou a redefinição de sua senha. Clique no link abaixo para redefinir sua senha:</p>
                  <a href="${resetLink}">Redefinir senha</a>
                  <p><strong>Importante:</strong> O link é válido por apenas 1 hora. Após esse período, ele expirará e você precisará solicitar um novo link para redefinir sua senha.</p>
-                 <p>Se você não solicitou a redefinição, ignore este e-mail.</p>`,
+                 <p>Se você não solicitou a redefinição, ignore este e-mail.</p>
+                 <p><em>Por favor, não responda a este e-mail, pois ele foi gerado automaticamente pelo sistema.</em></p>`,
         },
       },
       Subject: {
@@ -77,7 +78,8 @@ export async function sendEmailVerification({
                  <p>Obrigado por se registrar no Pet Step! Por favor, confirme seu e-mail clicando no link abaixo:</p>
                  <a href="${process.env.PET_STEP_FRONT}/verify-email?token=${token}">Verificar E-mail</a>
                  <p><strong>Importante:</strong> Este link é válido por 1 hora. Após esse período, você precisará solicitar um novo link para confirmar seu e-mail.</p>
-                 <p>Se você não solicitou essa verificação, ignore este e-mail.</p>`,
+                 <p>Se você não solicitou essa verificação, ignore este e-mail.</p>
+                 <p><em>Por favor, não responda a este e-mail, pois ele foi gerado automaticamente pelo sistema.</em></p>`,
         },
       },
       Subject: {
