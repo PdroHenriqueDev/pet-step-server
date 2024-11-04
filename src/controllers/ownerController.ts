@@ -2,7 +2,11 @@ import {Request, Response} from 'express';
 import OwnerRepository from '../repositories/ownerRepository';
 import {Owner as OwnerProps} from '../interfaces/owner';
 import axios from 'axios';
-import {calculateAverageWeight, getSizeCategory} from '../utils/dog';
+import {
+  calculateAverageWeight,
+  getSizeCategory,
+  getSizeCategoryEnglish,
+} from '../utils/dog';
 
 class Owner {
   async store(req: Request, res: Response) {
@@ -128,7 +132,7 @@ class Owner {
 
       const breeds = response.data.map((breed: any) => {
         const averageWeight = calculateAverageWeight(breed.weight.metric);
-        const sizeCategory = getSizeCategory(averageWeight);
+        const sizeCategory = getSizeCategoryEnglish(averageWeight);
 
         return {
           id: breed.id,
@@ -179,6 +183,31 @@ class Owner {
         .status(500)
         .send({status: 500, data: 'Erro ao buscar raça pelo ID'});
     }
+  }
+
+  async addMoreDog(req: Request, res: Response) {
+    const {id} = req.user;
+    const {name, breed, size} = req.body;
+
+    if (!id) {
+      return res.status(400).send({status: 400, data: 'Requisição inválida'});
+    }
+
+    const requiredFields = ['name', 'breed', 'size'];
+    const missingField = requiredFields.find(field => !req.body[field]);
+
+    if (missingField) {
+      return res
+        .status(400)
+        .send({data: `O campo "${missingField}" é obrigatório.`});
+    }
+
+    const newDog = {name, breed, size};
+
+    const response = await OwnerRepository.addDog(id, newDog);
+    const {status} = response;
+
+    return res.status(status).send(response);
   }
 }
 
