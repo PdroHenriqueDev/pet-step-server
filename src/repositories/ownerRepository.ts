@@ -129,6 +129,13 @@ class OwnerRepository {
 
       const {customerStripeId, defaultPayment} = owner;
 
+      if (!customerStripeId) {
+        return {
+          status: 200,
+          data: [],
+        };
+      }
+
       const paymentMethods = await StripeUtils.listPayments(customerStripeId!);
 
       const methods = paymentMethods.map(({id, card, type}) => {
@@ -154,11 +161,12 @@ class OwnerRepository {
         status: 200,
         data: methods,
       };
-    } catch {
+    } catch (error) {
+      console.log('Error list payment:', error);
       return {
         status: 500,
         data: {
-          message: 'Error',
+          data: 'Erro interono',
         },
       };
     }
@@ -261,6 +269,54 @@ class OwnerRepository {
       return {
         status: 500,
         data: 'Erro ao adicionar o cachorro',
+      };
+    }
+  }
+
+  async setupIntent(ownerId: string): Promise<RepositoryResponse> {
+    try {
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(ownerId),
+      });
+
+      if (!ownerExists) {
+        return {
+          status: 400,
+          data: 'Tutor não encontrado',
+        };
+      }
+
+      const {customerStripeId, email, name} = ownerExists;
+
+      let customerId = customerStripeId;
+
+      if (!customerStripeId) {
+        const customerStripe = await StripeUtils.createStripeCustomer({
+          email,
+          name,
+        });
+
+        await this.ownerCollection.updateOne(
+          {_id: new ObjectId(ownerId)},
+          {
+            $set: {customerStripeId: customerStripe.id},
+          },
+        );
+
+        customerId = customerStripe.id;
+      }
+
+      const customerStripe = await StripeUtils.setupIntent(customerId);
+
+      return {
+        status: 200,
+        data: customerStripe,
+      };
+    } catch (error) {
+      console.log('Error adding payment:', error);
+      return {
+        status: 500,
+        data: 'Erro interno',
       };
     }
   }

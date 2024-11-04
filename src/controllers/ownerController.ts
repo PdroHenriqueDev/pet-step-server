@@ -58,15 +58,15 @@ class Owner {
   }
 
   async payments(req: Request, res: Response) {
-    const {id} = req.params;
+    const {id} = req.user;
     if (!id) {
-      return res.status(400).send({error: 'Dog walker não encontrado'});
+      return res.status(400).send({data: 'Dog walker não encontrado'});
     }
 
     const response = await OwnerRepository.listPayments(id);
 
-    const {status, data} = response;
-    return res.status(status).send(data);
+    const {status} = response;
+    return res.status(status).send(response);
   }
 
   async updateDefaultPaymentMethod(req: Request, res: Response) {
@@ -207,6 +207,18 @@ class Owner {
     const response = await OwnerRepository.addDog(id, newDog);
     const {status} = response;
 
+    return res.status(status).send(response);
+  }
+
+  async paymentIntent(req: Request, res: Response) {
+    const {id} = req.user;
+    if (!id) {
+      return res.status(400).send({data: 'Dog walker não encontrado'});
+    }
+
+    const response = await OwnerRepository.setupIntent(id);
+
+    const {status} = response;
     return res.status(status).send(response);
   }
 }
