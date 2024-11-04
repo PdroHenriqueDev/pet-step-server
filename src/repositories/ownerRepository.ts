@@ -1,4 +1,4 @@
-import {ObjectId} from 'mongodb';
+import {ObjectId, PushOperator} from 'mongodb';
 import MongoConnection from '../database/mongoConnection';
 import StripeUtils from '../utils/stripe';
 import {Owner} from '../interfaces/owner';
@@ -216,6 +216,51 @@ class OwnerRepository {
       return {
         status: 500,
         data: 'Error interno',
+      };
+    }
+  }
+
+  async addDog(ownerId: string, dog: Dog): Promise<RepositoryResponse> {
+    try {
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(ownerId),
+      });
+
+      if (!ownerExists) {
+        return {
+          status: 400,
+          data: 'Tutor não encontrado',
+        };
+      }
+
+      const {dogs} = ownerExists;
+
+      if (dogs && dogs.length > 10) {
+        return {
+          status: 400,
+          data: 'É permitido cadastrar até 10 dogs. Exclua um antes de adicionar outro.',
+        };
+      }
+
+      const dogWithId = {...dog, _id: new ObjectId()};
+
+      await this.ownerCollection.updateOne(
+        {_id: new ObjectId(ownerId)},
+        {
+          $push: {dogs: dogWithId} as unknown as PushOperator<Document>,
+          $set: {updatedAt: this.currentDate},
+        },
+      );
+
+      return {
+        status: 200,
+        data: dogWithId,
+      };
+    } catch (error) {
+      console.log('Error adding dog:', error);
+      return {
+        status: 500,
+        data: 'Erro ao adicionar o cachorro',
       };
     }
   }

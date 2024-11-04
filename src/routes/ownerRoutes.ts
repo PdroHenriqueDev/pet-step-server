@@ -4,6 +4,7 @@ import {authenticateToken} from '../middleware/authenticateToken';
 
 const router = express.Router();
 
+router.post('/dog', authenticateToken, Owner.addMoreDog);
 router.post('/', Owner.store);
 
 router.get('/payments/:id', Owner.payments);

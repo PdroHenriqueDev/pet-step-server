@@ -19,3 +19,11 @@ export const getSizeCategory = (averageWeight: number) => {
       ? sizeMapping['medium']
       : sizeMapping['large'];
 };
+
+export const getSizeCategoryEnglish = (averageWeight: number) => {
+  return averageWeight <= 10
+    ? 'small'
+    : averageWeight <= 25
+      ? 'medium'
+      : 'large';
+};
