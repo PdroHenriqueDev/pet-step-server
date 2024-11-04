@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "src/index.ts",
-    "start:dev": "nodemon src/index.ts",
+    "dev": "nodemon src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write 'src/**/*.{js,ts}'",
@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "aws-sdk": "^2.1691.0",
+    "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

@@ -41,33 +41,43 @@ class DogWalker {
   }
 
   async nearests(req: Request, res: Response) {
-    const {latitude, longitude} = req.query;
+    const {latitude, longitude, limit, skip} = req.query;
     if (!latitude || !longitude) {
       return res.status(400).send({error: 'Requisição inválida'});
     }
 
-    const response = await DogWalkerRepository.findNearestDogWalkers(
-      parseFloat(latitude as string),
-      parseFloat(longitude as string),
-    );
+    const parsedLimit = limit ? parseInt(limit as string, 10) : 10;
+    const parsedSkip = skip ? parseInt(skip as string, 10) : 0;
+
+    const response = await DogWalkerRepository.findNearestDogWalkers({
+      latitude: parseFloat(latitude as string),
+      longitude: parseFloat(longitude as string),
+      limit: parsedLimit,
+      skip: parsedSkip,
+    });
 
     const {status, data} = response;
     return res.status(status).send(data);
   }
 
-  async recommeded(req: Request, res: Response) {
-    const {latitude, longitude} = req.query;
+  async recommended(req: Request, res: Response) {
+    const {latitude, longitude, limit, skip} = req.query;
     if (!latitude || !longitude) {
       return res.status(400).send({error: 'Requisição inválida'});
     }
 
-    const response = await DogWalkerRepository.findRecommededDogWalkers(
-      parseFloat(latitude as string),
-      parseFloat(longitude as string),
-    );
+    const parsedLimit = limit ? parseInt(limit as string, 10) : 10;
+    const parsedSkip = skip ? parseInt(skip as string, 10) : 0;
 
-    const {status, data} = response;
-    return res.status(status).send(data);
+    const response = await DogWalkerRepository.findRecommendedDogWalkers({
+      latitude: parseFloat(latitude as string),
+      longitude: parseFloat(longitude as string),
+      limit: parsedLimit,
+      skip: parsedSkip,
+    });
+
+    const {status} = response;
+    return res.status(status).send(response);
   }
 
   async findById(req: Request, res: Response) {

@@ -19,11 +19,11 @@ class PaymentController {
         data: customerStripe,
       };
 
-      const {status, data} = response;
+      const {status} = response;
 
-      return res.status(status).send(data);
+      return res.status(status).send(response);
     } catch (error) {
-      console.log('Error ao criar intent:', error);
+      console.log('Error creating stripe intent:', error);
       return res.status(500).send('Error');
     }
   }

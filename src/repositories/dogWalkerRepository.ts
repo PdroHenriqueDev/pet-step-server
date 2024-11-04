@@ -220,11 +220,19 @@ class DogWalkerRepository {
     }
   }
 
-  async findNearestDogWalkers(
-    latitude: number,
-    longitude: number,
-    radiusInMeters: number = 10000,
-  ) {
+  async findNearestDogWalkers({
+    latitude,
+    longitude,
+    radiusInMeters = 10000,
+    limit = 10,
+    skip = 0,
+  }: {
+    latitude: number;
+    longitude: number;
+    radiusInMeters?: number;
+    limit?: number;
+    skip?: number;
+  }) {
     try {
       const nearestDogWalkers = await this.dogWalkersCollection
         .find({
@@ -236,6 +244,8 @@ class DogWalkerRepository {
           },
           isOnline: true,
         })
+        .skip(skip)
+        .limit(limit)
         .toArray();
 
       const dogWalkersWithDistance = nearestDogWalkers.map(dogWalker => {
@@ -258,19 +268,27 @@ class DogWalkerRepository {
         data: dogWalkersWithDistance,
       };
     } catch (error) {
-      console.log(error);
+      console.log('Error getting nearest dog walkers:', error);
       return {
         status: 500,
-        data: 'Error',
+        data: 'Erro interno',
       };
     }
   }
 
-  async findRecommededDogWalkers(
-    latitude: number,
-    longitude: number,
-    radiusInMeters: number = 10000,
-  ) {
+  async findRecommendedDogWalkers({
+    latitude,
+    longitude,
+    radiusInMeters = 10000,
+    limit = 10,
+    skip = 0,
+  }: {
+    latitude: number;
+    longitude: number;
+    radiusInMeters?: number;
+    limit?: number;
+    skip?: number;
+  }) {
     try {
       const recommedDogWalkers = await this.dogWalkersCollection
         .find({
@@ -281,7 +299,10 @@ class DogWalkerRepository {
             },
           },
           rate: {$gte: 4.5},
+          isOnline: true,
         })
+        .skip(skip)
+        .limit(limit)
         .toArray();
 
       const dogWalkersWithDistance = recommedDogWalkers.map(dogWalker => {
@@ -300,12 +321,16 @@ class DogWalkerRepository {
         };
       });
 
-      dogWalkersWithDistance.sort((a, b) => {
-        if (a.isOnline === b.isOnline) {
-          return parseFloat(a.distance) - parseFloat(b.distance);
-        }
-        return a.isOnline ? -1 : 1;
-      });
+      // dogWalkersWithDistance.sort((a, b) => {
+      //   if (a.isOnline === b.isOnline) {
+      //     return parseFloat(a.distance) - parseFloat(b.distance);
+      //   }
+      //   return a.isOnline ? -1 : 1;
+      // });
+
+      dogWalkersWithDistance.sort(
+        (a, b) => parseFloat(a.distance) - parseFloat(b.distance),
+      );
 
       return {
         status: 200,

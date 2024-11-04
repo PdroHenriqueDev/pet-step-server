@@ -405,8 +405,7 @@ class WalkRepository {
         };
       }
 
-      const {stripeAccountId: ownerStripeAccountId, defaultPayment} =
-        ownerExists;
+      const {customerStripeId, defaultPayment} = ownerExists;
       const {stripeAccountId} = dogWalkerExists;
       const {totalCost} = walk;
 
@@ -415,7 +414,7 @@ class WalkRepository {
       const paymentStatus = await StripeUtils.handlePayment({
         requestId,
         valueInCents,
-        customerStripeId: ownerStripeAccountId,
+        customerStripeId,
         defaultPayment,
         dogWalkerStripeAccountId: stripeAccountId,
       });

@@ -4,6 +4,7 @@ import AuthRepository from '../repositories/authRepository';
 import {isEmailValid} from '../utils/validateEmail';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 import {generateAccessToken, generateRefreshToken} from '../utils/authToken';
+import FirebaseAdminUtil from '../utils/firebaseAdmin';
 
 class AuthController {
   async login(req: Request, res: Response): Promise<Response<ApiResponse>> {
@@ -83,9 +84,14 @@ class AuthController {
       const accessToken = generateAccessToken(user.id, role);
       const newRefreshToken = generateRefreshToken(user.id, role);
 
+      const firebaseAdmin = FirebaseAdminUtil.getAdmin();
+      const firebaseToken = await firebaseAdmin
+        .auth()
+        .createCustomToken(user.id);
+
       return res.status(200).json({
         status: 200,
-        data: {accessToken, refreshToken: newRefreshToken},
+        data: {accessToken, refreshToken: newRefreshToken, firebaseToken},
       });
     } catch (error) {
       console.log('Error ao renovar token', error);

@@ -7,8 +7,8 @@ const dogWalkerRouter = express.Router();
 
 const upload = multer({storage: multer.memoryStorage()});
 
-dogWalkerRouter.get('/nearest', DogWalker.nearests);
-dogWalkerRouter.get('/recommended', DogWalker.recommeded);
+dogWalkerRouter.get('/nearest', authenticateToken, DogWalker.nearests);
+dogWalkerRouter.get('/recommended', authenticateToken, DogWalker.recommended);
 dogWalkerRouter.get(
   '/account-requirements',
   authenticateToken,
@@ -30,7 +30,7 @@ dogWalkerRouter.post(
   DogWalker.accountDocument,
 );
 dogWalkerRouter.post('/', DogWalker.store);
-dogWalkerRouter.post('/:id/feedback', DogWalker.feedback);
+dogWalkerRouter.post('/:id/feedback', authenticateToken, DogWalker.feedback);
 dogWalkerRouter.post(
   '/profile-image',
   authenticateToken,
