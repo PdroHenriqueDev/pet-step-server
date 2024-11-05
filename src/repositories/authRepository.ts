@@ -131,7 +131,7 @@ class AuthRepository {
         },
       };
     } catch (error) {
-      console.log('Algo de errado ao fazer logion:', error);
+      console.log('Error login:', error);
       return {
         status: 500,
         data: 'Erro interno',

@@ -320,6 +320,46 @@ class OwnerRepository {
       };
     }
   }
+
+  async updateDogWalker({
+    ownerId,
+    field,
+    newValue,
+  }: {
+    ownerId: string;
+    field: string;
+    newValue: unknown;
+  }): Promise<RepositoryResponse> {
+    try {
+      const updateFields = {
+        [field]: newValue,
+        updatedAt: new Date(),
+      };
+
+      const result = await this.ownerCollection.updateOne(
+        {_id: new ObjectId(ownerId)},
+        {$set: updateFields},
+      );
+
+      if (result.modifiedCount === 0) {
+        return {
+          status: 404,
+          data: 'Tutor não encontrado ou nenhum campo foi modificado',
+        };
+      }
+
+      return {
+        status: 200,
+        data: 'Tutor atualizado com sucesso',
+      };
+    } catch (error) {
+      console.log('Erro updating owner:', error);
+      return {
+        status: 500,
+        data: 'Erro interno',
+      };
+    }
+  }
 }
 
 export default new OwnerRepository();

@@ -7,6 +7,7 @@ import {
   getSizeCategory,
   getSizeCategoryEnglish,
 } from '../utils/dog';
+import {ApiResponse} from '../interfaces/apitResponse';
 
 class Owner {
   async store(req: Request, res: Response) {
@@ -217,6 +218,36 @@ class Owner {
     }
 
     const response = await OwnerRepository.setupIntent(id);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async updateField(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const ownerId = req?.user?.id;
+
+    const {field, newValue} = req.body;
+
+    const allowedFields = ['name', 'lastName', 'phone', 'address', 'dog'];
+
+    if (!allowedFields.includes(field)) {
+      return res
+        .status(400)
+        .send({status: 400, data: 'Campo inválido para atualização'});
+    }
+
+    if (!ownerId || !field || !newValue) {
+      return res.status(400).send({status: 400, data: 'Requisição inválida'});
+    }
+
+    const response = await OwnerRepository.updateDogWalker({
+      ownerId,
+      field,
+      newValue,
+    });
 
     const {status} = response;
     return res.status(status).send(response);
