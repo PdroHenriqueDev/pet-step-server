@@ -14,6 +14,7 @@ router.get('/dogs-breeds/search', authenticateToken, Owner.searchBreeds);
 router.get('/dogs-breeds/:breedId', authenticateToken, Owner.getBreedById);
 router.get('/:id', authenticateToken, Owner.findById);
 
+router.put('/update', authenticateToken, Owner.updateField);
 router.put(
   '/:id/defaultPayment',
   authenticateToken,
