@@ -360,6 +360,83 @@ class OwnerRepository {
       };
     }
   }
+
+  async updateDog(ownerId: string, dog: Dog): Promise<RepositoryResponse> {
+    try {
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(ownerId),
+      });
+
+      if (!ownerExists) {
+        return {
+          status: 400,
+          data: 'Tutor não encontrado',
+        };
+      }
+
+      const result = await this.ownerCollection.updateOne(
+        {_id: new ObjectId(ownerId), 'dogs._id': new ObjectId(dog._id)},
+        {
+          $set: {
+            'dogs.$.name': dog.name,
+            'dogs.$.breed': dog.breed,
+            'dogs.$.size': dog.size,
+            updatedAt: this.currentDate,
+          },
+        },
+      );
+
+      if (result.modifiedCount === 0) {
+        return {
+          status: 404,
+          data: 'Cão não encontrado ou nenhuma alteração realizada',
+        };
+      }
+
+      return {
+        status: 200,
+        data: dog,
+      };
+    } catch (error) {
+      console.log('Erro updating dog:', error);
+      return {
+        status: 500,
+        data: 'Erro interno',
+      };
+    }
+  }
+
+  async deleteDog(ownerId: string, dogId: string): Promise<RepositoryResponse> {
+    try {
+      const result = await this.ownerCollection.updateOne(
+        {_id: new ObjectId(ownerId)},
+        {
+          $pull: {
+            dogs: {_id: new ObjectId(dogId)},
+          } as unknown as PushOperator<Document>,
+          $set: {updatedAt: this.currentDate},
+        },
+      );
+
+      if (result.modifiedCount === 0) {
+        return {
+          status: 404,
+          data: 'Cão não encontrado ou tutor não possui este cão',
+        };
+      }
+
+      return {
+        status: 200,
+        data: 'Cão excluído com sucesso',
+      };
+    } catch (error) {
+      console.log('Erro deleting dog:', error);
+      return {
+        status: 500,
+        data: 'Erro interno',
+      };
+    }
+  }
 }
 
 export default new OwnerRepository();

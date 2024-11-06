@@ -15,10 +15,13 @@ router.get('/dogs-breeds/:breedId', authenticateToken, Owner.getBreedById);
 router.get('/:id', authenticateToken, Owner.findById);
 
 router.put('/update', authenticateToken, Owner.updateField);
+router.put('/dog/:dogId', authenticateToken, Owner.updateDog);
 router.put(
   '/:id/defaultPayment',
   authenticateToken,
   Owner.updateDefaultPaymentMethod,
 );
+
+router.delete('/dog/:dogId', authenticateToken, Owner.deleteDog);
 
 export default router;

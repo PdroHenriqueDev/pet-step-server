@@ -231,7 +231,7 @@ class Owner {
 
     const {field, newValue} = req.body;
 
-    const allowedFields = ['name', 'lastName', 'phone', 'address', 'dog'];
+    const allowedFields = ['name', 'lastName', 'phone', 'address'];
 
     if (!allowedFields.includes(field)) {
       return res
@@ -249,6 +249,41 @@ class Owner {
       newValue,
     });
 
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async updateDog(req: Request, res: Response) {
+    const ownerId = req.user?.id;
+    const dogId = req.params?.dogId;
+
+    const {name, breed, size} = req.body;
+    if (!ownerId || !dogId) {
+      return res.status(400).send({
+        status: 400,
+        data: 'Requisição inválida. ID do tutor ou do cão ausente.',
+      });
+    }
+
+    const updatedDog = {_id: dogId, name, breed, size};
+
+    const response = await OwnerRepository.updateDog(ownerId, updatedDog);
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async deleteDog(req: Request, res: Response) {
+    const ownerId = req.user?.id;
+    const dogId = req.params?.dogId;
+
+    if (!ownerId || !dogId) {
+      return res.status(400).send({
+        status: 400,
+        data: 'Requisição inválida. ID do tutor ou do cão ausente.',
+      });
+    }
+
+    const response = await OwnerRepository.deleteDog(ownerId, dogId);
     const {status} = response;
     return res.status(status).send(response);
   }
