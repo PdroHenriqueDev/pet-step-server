@@ -1,10 +1,20 @@
 import express from 'express';
 import Owner from '../controllers/ownerController';
 import {authenticateToken} from '../middleware/authenticateToken';
+import multer from 'multer';
 
 const router = express.Router();
 
+const upload = multer({storage: multer.memoryStorage()});
+
 router.post('/dog', authenticateToken, Owner.addMoreDog);
+router.post(
+  '/profile-image',
+  authenticateToken,
+  upload.single('profile'),
+  Owner.imageProfile,
+);
+
 router.post('/', Owner.store);
 
 router.get('/payment/set-up-intent', authenticateToken, Owner.paymentIntent);

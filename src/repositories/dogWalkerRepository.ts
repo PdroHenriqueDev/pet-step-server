@@ -836,7 +836,7 @@ class DogWalkerRepository {
         data: publicUrl,
       };
     } catch (error) {
-      console.log('Error updating profile image:', error);
+      console.log('Error updating dog walker profile image:', error);
       return {
         status: 500,
         data: 'Erro interno ao atualizar a imagem de perfil',
