@@ -600,15 +600,16 @@ class WalkRepository {
       const requests = await this.requestRideCollection
         .find(
           {
-            'calculation.ownerId': ownerId,
+            'displayData.owner._id': new ObjectId(ownerId),
             status: WalkEvents.COMPLETED,
           },
           {
             projection: {
               _id: 1,
-              'dogWalker.name': 1,
-              'dogWalker.profileUrl': 1,
-              'calculation.costDetails.walkPrice.price': 1,
+              'displayData.dogWalker.name': 1,
+              'displayData.dogWalker._id': 1,
+              'displayData.walk.totalCost': 1,
+              'displayData.walk.durationMinutes': 1,
               createdAt: 1,
             },
           },
@@ -618,27 +619,23 @@ class WalkRepository {
         .toArray();
 
       const responses = requests.map(request => {
-        const {_id, dogWalker, calculation, createdAt} = request;
-        const {name, profileUrl} = dogWalker ?? {};
-
-        const {costDetails} = calculation ?? {};
-        const {walkPrice} = costDetails ?? {};
-        const {price} = walkPrice ?? {};
+        const {
+          _id,
+          displayData: {dogWalker, walk},
+          createdAt,
+        } = request;
 
         return {
           _id,
-          dogWalker: {
-            name: name ?? null,
-            profileUrl: profileUrl ?? null,
-          },
-          price: price ?? null,
-          startDate: createdAt ?? null,
+          dogWalker,
+          walk,
+          startDate: createdAt,
         };
       });
 
       return {
         status: 200,
-        data: responses,
+        data: responses as unknown as WalkProps[],
       };
     } catch (error) {
       console.error('Erro ao listar solicitação:', error);

@@ -114,16 +114,16 @@ class WalkController {
   }
 
   async listWalks(req: Request, res: Response) {
-    const {ownerId} = req.params;
+    const {id} = req.user;
     const {page} = req.query;
 
-    if (!ownerId) {
+    if (!id) {
       return res.status(400).send({data: 'Requisição inválida'});
     }
 
     const pageNumber = parseInt(page as string, 10) || 1;
 
-    const response = await WalkRepository.requestsByOwner(ownerId, pageNumber);
+    const response = await WalkRepository.requestsByOwner(id, pageNumber);
 
     const {status, data} = response;
     return res.status(status).send(data);
