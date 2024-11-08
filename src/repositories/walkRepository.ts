@@ -60,14 +60,14 @@ class WalkRepository {
 
   async calculateWalk({
     dogWalkerId,
-    numberOfDogs,
+    dogs,
     walkDurationMinutes,
     ownerId,
     receivedLocation,
   }: {
     ownerId: string;
     dogWalkerId: string;
-    numberOfDogs: number;
+    dogs: string[];
     walkDurationMinutes: number;
     receivedLocation: Location;
   }): Promise<RepositoryResponse> {
@@ -82,8 +82,28 @@ class WalkRepository {
         };
       }
 
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(ownerId),
+      });
+
+      if (!ownerExists) {
+        return {
+          status: 400,
+          data: 'Tutor não encontrado.',
+        };
+      }
+
+      const {defaultPayment} = ownerExists;
+
+      if (!defaultPayment) {
+        return {
+          status: 400,
+          data: 'Selecione um meio de pagamento.',
+        };
+      }
+
       const costDetails = calculateWalkCost({
-        numberOfDogs,
+        numberOfDogs: dogs.length,
         walkDurationMinutes,
       });
 
@@ -91,6 +111,7 @@ class WalkRepository {
         await DogWalkerRepository.calculationRequestCollection.insertOne({
           ownerId,
           dogWalkerId,
+          dogs,
           costDetails,
           receivedLocation,
           createdAt: this.currentDate,
@@ -137,7 +158,7 @@ class WalkRepository {
         };
       }
 
-      const {dogWalkerId, ownerId} = calculation;
+      const {dogWalkerId, ownerId, dogs: dogsIds} = calculation;
 
       const dogWalker = await this.dogWalkersCollection.findOne({
         _id: new ObjectId(dogWalkerId),
@@ -170,7 +191,7 @@ class WalkRepository {
         };
       }
 
-      const {currentWalk} = owner;
+      const {currentWalk, dogs} = owner;
 
       if (currentWalk) {
         return {
@@ -178,6 +199,9 @@ class WalkRepository {
           data: 'Já tem um passeio em andamento',
         };
       }
+
+      const selectedDogs =
+        dogs?.filter(dog => dogsIds.includes(dog._id?.toString())) || [];
 
       const {costDetails, receivedLocation} = calculation;
 
@@ -208,6 +232,12 @@ class WalkRepository {
           durationMinutes,
           numberOfDogs,
           receivedLocation,
+          dogs: selectedDogs.map(dog => ({
+            _id: dog._id,
+            name: dog.name,
+            breed: dog.breed,
+            size: dog.size,
+          })),
         },
       };
 
@@ -1046,6 +1076,94 @@ class WalkRepository {
       return {
         status: 500,
         data: 'Erro interno do servidor',
+      };
+    }
+  }
+
+  async ownerCancelWalk(userId: string): Promise<RepositoryResponse> {
+    try {
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(userId),
+      });
+
+      if (!ownerExists) {
+        return {
+          status: 400,
+          data: 'Tutor não encontrada.',
+        };
+      }
+
+      const {currentWalk} = ownerExists;
+
+      const request = await this.requestRideCollection.findOne({
+        _id: new ObjectId(currentWalk.requestId),
+      });
+
+      if (!request) {
+        return {
+          status: 400,
+          data: 'Solicitação não encontrada.',
+        };
+      }
+
+      if (request?.status !== WalkEvents.PENDING) {
+        return {
+          status: 400,
+          data: 'Solicitação não pode ser negada.',
+        };
+      }
+
+      const {owner, dogWalker} = request.displayData;
+
+      if (!owner || !dogWalker) {
+        return {
+          status: 400,
+          data: 'Informações de proprietário ou passeador estão ausentes.',
+        };
+      }
+
+      await Promise.all([
+        this.requestRideCollection.updateOne(
+          {_id: request._id},
+          {
+            $set: {
+              status: WalkEvents.CANCELLED,
+            },
+          },
+        ),
+        this.dogWalkersCollection.updateOne(
+          {_id: dogWalker._id},
+          {
+            $set: {
+              currentWalk: null,
+            },
+          },
+        ),
+        this.ownerCollection.updateOne(
+          {_id: owner._id},
+          {
+            $set: {
+              currentWalk: null,
+            },
+          },
+        ),
+      ]);
+
+      this.socket.publishEventToRoom(
+        request._id.toString(),
+        SocketResponse.Walk,
+        WalkEvents.REQUEST_DENIED,
+      );
+
+      return {
+        status: 200,
+        data: 'Solicitação cancelada.',
+      };
+    } catch (error) {
+      console.log('Error owner cancelling request:', error);
+      return {
+        status: 500,
+        data: 'Erro interno.',
       };
     }
   }

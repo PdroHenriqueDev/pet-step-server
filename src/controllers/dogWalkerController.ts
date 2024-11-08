@@ -56,8 +56,8 @@ class DogWalker {
       skip: parsedSkip,
     });
 
-    const {status, data} = response;
-    return res.status(status).send(data);
+    const {status} = response;
+    return res.status(status).send(response);
   }
 
   async recommended(req: Request, res: Response) {

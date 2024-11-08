@@ -8,38 +8,33 @@ class WalkController {
     req: Request,
     res: Response,
   ): Promise<Response<ApiResponse>> {
-    const {
-      dogWalkerId,
-      numberOfDogs,
-      walkDurationMinutes,
-      ownerId,
-      receivedLocation,
-    } = req.body;
+    const {dogWalkerId, dogs, walkDurationMinutes, ownerId, receivedLocation} =
+      req.body;
 
     if (!dogWalkerId || !ownerId)
       return res.status(400).send({status: 400, data: 'Requisição inválida'});
 
-    if (!numberOfDogs || !walkDurationMinutes) {
+    if (!dogs || !walkDurationMinutes) {
       return res.status(400).send({
         status: 400,
-        data: !numberOfDogs
-          ? 'Número de cachorros é obrigatório'
+        data: !dogs
+          ? 'Cachorro é obrigatório'
           : 'Duração do passeio é obrigatória',
       });
     }
 
-    if (numberOfDogs > 3) {
+    if (dogs.length > 4) {
       return res.status(400).send({
         status: 400,
         data: 'Somente é permitido até 3 dogs por passeio',
       });
     }
 
-    if (numberOfDogs <= 0 || walkDurationMinutes <= 0) {
+    if (dogs.length <= 0 || walkDurationMinutes <= 0) {
       return res
         .status(400)
         .send(
-          numberOfDogs <= 0
+          dogs <= 0
             ? 'Número de cachorros deve ser maiore que zero.'
             : 'Duração deve ser maior que zero.',
         );
@@ -48,13 +43,13 @@ class WalkController {
     const response = await WalkRepository.calculateWalk({
       ownerId,
       dogWalkerId,
-      numberOfDogs,
+      dogs,
       walkDurationMinutes,
       receivedLocation,
     });
 
-    const {status, data} = response;
-    return res.status(status).send(data);
+    const {status} = response;
+    return res.status(status).send(response);
   }
 
   async requestWalk(
@@ -159,6 +154,22 @@ class WalkController {
     }
 
     const response = await WalkRepository.cancelWalk(requestId, role);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async ownerCancel(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const {role, id} = req.user;
+
+    if (!role || !id) {
+      return res.status(400).send({status: 400, data: 'Requisição inválida'});
+    }
+
+    const response = await WalkRepository.ownerCancelWalk(id);
 
     const {status} = response;
     return res.status(status).send(response);

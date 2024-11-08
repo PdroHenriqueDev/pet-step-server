@@ -15,6 +15,7 @@ dogWalkerRouter.post('/accept/:requestId', WalkController.acceptRide);
 dogWalkerRouter.post('/start/:requestId', WalkController.start);
 dogWalkerRouter.post('/finalize/:requestId', WalkController.finalize);
 
+dogWalkerRouter.delete('/owner/cancel', WalkController.ownerCancel);
 dogWalkerRouter.delete('/deny/:requestId', WalkController.deny);
 dogWalkerRouter.delete('/cancel/:requestId', WalkController.cancel);
 
