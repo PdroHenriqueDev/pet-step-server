@@ -974,15 +974,29 @@ class WalkRepository {
           },
         ),
         this.dogWalkersCollection.updateOne(
-          {_id: new ObjectId(dogWalker._id)},
+          {_id: dogWalker._id},
           {
-            $set: {currentWalk: null},
+            $set: {
+              currentWalk: null,
+              pendingReview: {
+                reviewedId: owner._id,
+                profileUrl: owner?.profileUrl,
+                requestId: new ObjectId(requestId),
+              },
+            },
           },
         ),
         this.ownerCollection.updateOne(
-          {_id: new ObjectId(owner._id)},
+          {_id: owner._id},
           {
-            $set: {currentWalk: null},
+            $set: {
+              currentWalk: null,
+              pendingReview: {
+                reviewedId: dogWalker._id,
+                profileUrl: dogWalker?.profileUrl,
+                requestId: new ObjectId(requestId),
+              },
+            },
           },
         ),
       ]);

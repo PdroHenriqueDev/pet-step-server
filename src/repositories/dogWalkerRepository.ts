@@ -22,10 +22,6 @@ class DogWalkerRepository {
     return this.db.collection('dogwalker');
   }
 
-  get feedbackCollection() {
-    return this.db.collection('feedback');
-  }
-
   get calculationRequestCollection() {
     return this.db.collection('calculationRequest');
   }
@@ -377,60 +373,6 @@ class DogWalkerRepository {
       };
     } catch (error) {
       console.log('Error finding dog walker:', error);
-      return {
-        status: 500,
-        data: 'Error',
-      };
-    }
-  }
-
-  async saveFeedback({
-    dogWalkerId,
-    rate,
-    comment,
-  }: {
-    dogWalkerId: string;
-    rate: string;
-    comment: string;
-  }) {
-    try {
-      const dogWalkerResult = await this.findDogWalkerById(dogWalkerId);
-
-      if (dogWalkerResult.status !== 200 || !dogWalkerResult.data) {
-        return {
-          status: 404,
-          error: 'Dog walker não encontrado',
-        };
-      }
-
-      const feedbackResult = await this.feedbackCollection.insertOne({
-        walker_id: dogWalkerId,
-        rate,
-        comment,
-      });
-
-      const dogWalker = dogWalkerResult.data as any;
-      const newTotalRatings = dogWalker.totalRatings + 1;
-      const newRate =
-        ((dogWalker.rate * dogWalker.totalRatings + rate) as any) /
-        newTotalRatings;
-
-      await this.dogWalkersCollection.updateOne(
-        {_id: new ObjectId(dogWalkerId)},
-        {
-          $set: {
-            rate: newRate,
-            totalRatings: newTotalRatings,
-          },
-        },
-      );
-
-      return {
-        status: 200,
-        data: feedbackResult,
-      };
-    } catch (err) {
-      console.log('Got error =>', err);
       return {
         status: 500,
         data: 'Error',

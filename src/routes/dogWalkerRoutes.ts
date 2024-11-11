@@ -30,7 +30,6 @@ dogWalkerRouter.post(
   DogWalker.accountDocument,
 );
 dogWalkerRouter.post('/', DogWalker.store);
-dogWalkerRouter.post('/:id/feedback', authenticateToken, DogWalker.feedback);
 dogWalkerRouter.post(
   '/profile-image',
   authenticateToken,

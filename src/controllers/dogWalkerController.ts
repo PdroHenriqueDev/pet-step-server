@@ -92,25 +92,6 @@ class DogWalker {
     return res.status(status).send(response);
   }
 
-  async feedback(req: Request, res: Response) {
-    const {id} = req.params;
-
-    if (!id) return res.status(400).send({error: 'Dog walker não encontrado'});
-
-    const {rate, comment} = req.body;
-
-    if (!rate) return res.status(400).send({error: 'Requisição inválida'});
-
-    const response = await DogWalkerRepository.saveFeedback({
-      dogWalkerId: id,
-      rate,
-      comment,
-    });
-
-    const {status, data} = response;
-    return res.status(status).send(data);
-  }
-
   async updateLocation(
     req: Request,
     res: Response,
