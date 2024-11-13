@@ -171,9 +171,9 @@ class WalkRepository {
         };
       }
 
-      const {currentWalk: dogWalkerIsBusy} = dogWalker;
+      const {currentWalk: dogWalkerIsBusy, isOnline} = dogWalker;
 
-      if (dogWalkerIsBusy) {
+      if (dogWalkerIsBusy || !isOnline) {
         return {
           status: 409,
           data: 'Dog walker não está mais disponível',
@@ -506,6 +506,7 @@ class WalkRepository {
                 requestId,
                 status: WalkEvents.ACCEPTED_SUCCESSFULLY,
               },
+              isOnline: false,
             },
           },
         ),
