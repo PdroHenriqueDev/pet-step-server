@@ -203,8 +203,8 @@ class StripUtils {
         currency: 'BRL',
         account_holder_name: `${name} ${lastName}`,
         account_holder_type: 'individual',
-        routing_number: '110-0000',
-        account_number: '0001234',
+        routing_number: routingNumber,
+        account_number: accountNumber,
       },
     });
 
