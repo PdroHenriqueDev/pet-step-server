@@ -14,6 +14,13 @@ class NotificationUtils {
       requestId?: string;
     };
   }): Promise<{status: number; data: string}> {
+    if (!token) {
+      return {
+        status: 500,
+        data: 'Erro interno.',
+      };
+    }
+
     const admin = FirebaseAdminUtil.getAdmin();
 
     try {
