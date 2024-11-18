@@ -7,6 +7,7 @@ import authRoutes from './authRoutes';
 import applicationRoutes from './applicationRoutes';
 import notificationRoutes from './notificationRoutes';
 import adminRoutes from './adminRoutes';
+import feedbackRoutes from './feedbackRoutes';
 import {authenticateToken} from '../middleware/authenticateToken';
 
 const router = express.Router();
@@ -18,11 +19,11 @@ router.get('/', (req, res) => {
 router.use('/dog-walker', dogWalkerRoutes);
 router.use('/owner', ownerRoutes);
 router.use('/payment', authenticateToken, paymentRoutes);
-// router.use('/walk', walkRoutes);
 router.use('/walk', authenticateToken, walkRoutes);
 router.use('/auth', authRoutes);
 router.use('/application', authenticateToken, applicationRoutes);
 router.use('/notification', authenticateToken, notificationRoutes);
 router.use('/admin', adminRoutes);
+router.use('/feedback', authenticateToken, feedbackRoutes);
 
 export default router;

@@ -8,6 +8,7 @@ import {genSalt, hash} from 'bcrypt';
 import {generateAccessToken} from '../utils/authToken';
 import {UserRole} from '../enums/role';
 import {sendEmailVerification} from '../utils/sendEmail';
+import {uploadToS3} from '../utils/s3Utils';
 
 class OwnerRepository {
   get db() {
@@ -357,6 +358,132 @@ class OwnerRepository {
       return {
         status: 500,
         data: 'Erro interno',
+      };
+    }
+  }
+
+  async updateDog(ownerId: string, dog: Dog): Promise<RepositoryResponse> {
+    try {
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(ownerId),
+      });
+
+      if (!ownerExists) {
+        return {
+          status: 400,
+          data: 'Tutor não encontrado',
+        };
+      }
+
+      const result = await this.ownerCollection.updateOne(
+        {_id: new ObjectId(ownerId), 'dogs._id': new ObjectId(dog._id)},
+        {
+          $set: {
+            'dogs.$.name': dog.name,
+            'dogs.$.breed': dog.breed,
+            'dogs.$.size': dog.size,
+            updatedAt: this.currentDate,
+          },
+        },
+      );
+
+      if (result.modifiedCount === 0) {
+        return {
+          status: 404,
+          data: 'Cão não encontrado ou nenhuma alteração realizada',
+        };
+      }
+
+      return {
+        status: 200,
+        data: dog,
+      };
+    } catch (error) {
+      console.log('Erro updating dog:', error);
+      return {
+        status: 500,
+        data: 'Erro interno',
+      };
+    }
+  }
+
+  async deleteDog(ownerId: string, dogId: string): Promise<RepositoryResponse> {
+    try {
+      const result = await this.ownerCollection.updateOne(
+        {_id: new ObjectId(ownerId)},
+        {
+          $pull: {
+            dogs: {_id: new ObjectId(dogId)},
+          } as unknown as PushOperator<Document>,
+          $set: {updatedAt: this.currentDate},
+        },
+      );
+
+      if (result.modifiedCount === 0) {
+        return {
+          status: 404,
+          data: 'Cão não encontrado ou tutor não possui este cão',
+        };
+      }
+
+      return {
+        status: 200,
+        data: 'Cão excluído com sucesso',
+      };
+    } catch (error) {
+      console.log('Erro deleting dog:', error);
+      return {
+        status: 500,
+        data: 'Erro interno',
+      };
+    }
+  }
+
+  async updateProfileImage(
+    dogWalkerId: string,
+    file: Express.Multer.File,
+  ): Promise<RepositoryResponse> {
+    try {
+      const dogWalkerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(dogWalkerId),
+      });
+
+      if (!dogWalkerExists) {
+        return {
+          status: 400,
+          data: 'Dog Walker não existe',
+        };
+      }
+
+      const uploadResult = await uploadToS3({
+        fileBuffer: file.buffer,
+        key: dogWalkerId,
+        storageClass: 'STANDARD',
+        fileType: file.mimetype,
+        bucketName: process.env.S3_BUCKET_PROFILE as string,
+      });
+
+      const publicUrl = uploadResult.Location;
+
+      await this.ownerCollection.updateOne(
+        {_id: new ObjectId(dogWalkerId)},
+        {
+          $set: {
+            profileUrl: publicUrl,
+            updatedAt: new Date(),
+          },
+        },
+      );
+
+      return {
+        status: 200,
+        data: publicUrl,
+      };
+    } catch (error) {
+      console.log('Error updating owner profile image:', error);
+      return {
+        status: 500,
+        data: 'Erro interno ao atualizar a imagem de perfil',
       };
     }
   }

@@ -4,8 +4,8 @@ export interface WalkProps {
   _id: ObjectId;
   dogWalker: {
     name: string;
-    profileUrl: string;
+    profileUrl?: string;
   };
-  price: number | null;
-  startDate: Date | null;
+  price: number;
+  startDate: Date | string;
 }

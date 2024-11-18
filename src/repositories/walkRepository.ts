@@ -13,6 +13,7 @@ import {UserRole} from '../enums/role';
 import {SocketResponse} from '../enums/socketResponse';
 import {WalkEvents} from '../enums/walk';
 import FirebaseAdminUtil from '../utils/firebaseAdmin';
+import {NotificationEnum} from '../enums/notification';
 
 class WalkRepository {
   get db() {
@@ -39,6 +40,10 @@ class WalkRepository {
     return SocketInit.getInstance();
   }
 
+  get notificationCollection() {
+    return this.db.collection('notification');
+  }
+
   currentDate = new Date();
 
   async getRequestById(requestId: string): Promise<RepositoryResponse> {
@@ -60,14 +65,14 @@ class WalkRepository {
 
   async calculateWalk({
     dogWalkerId,
-    numberOfDogs,
+    dogs,
     walkDurationMinutes,
     ownerId,
     receivedLocation,
   }: {
     ownerId: string;
     dogWalkerId: string;
-    numberOfDogs: number;
+    dogs: string[];
     walkDurationMinutes: number;
     receivedLocation: Location;
   }): Promise<RepositoryResponse> {
@@ -82,8 +87,28 @@ class WalkRepository {
         };
       }
 
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(ownerId),
+      });
+
+      if (!ownerExists) {
+        return {
+          status: 400,
+          data: 'Tutor não encontrado.',
+        };
+      }
+
+      const {defaultPayment} = ownerExists;
+
+      if (!defaultPayment) {
+        return {
+          status: 400,
+          data: 'Selecione um meio de pagamento.',
+        };
+      }
+
       const costDetails = calculateWalkCost({
-        numberOfDogs,
+        numberOfDogs: dogs.length,
         walkDurationMinutes,
       });
 
@@ -91,6 +116,7 @@ class WalkRepository {
         await DogWalkerRepository.calculationRequestCollection.insertOne({
           ownerId,
           dogWalkerId,
+          dogs,
           costDetails,
           receivedLocation,
           createdAt: this.currentDate,
@@ -137,7 +163,7 @@ class WalkRepository {
         };
       }
 
-      const {dogWalkerId, ownerId} = calculation;
+      const {dogWalkerId, ownerId, dogs: dogsIds} = calculation;
 
       const dogWalker = await this.dogWalkersCollection.findOne({
         _id: new ObjectId(dogWalkerId),
@@ -150,9 +176,9 @@ class WalkRepository {
         };
       }
 
-      const {currentWalk: dogWalkerIsBusy} = dogWalker;
+      const {currentWalk: dogWalkerIsBusy, isOnline} = dogWalker;
 
-      if (dogWalkerIsBusy) {
+      if (dogWalkerIsBusy || !isOnline) {
         return {
           status: 409,
           data: 'Dog walker não está mais disponível',
@@ -170,7 +196,7 @@ class WalkRepository {
         };
       }
 
-      const {currentWalk} = owner;
+      const {currentWalk, dogs} = owner;
 
       if (currentWalk) {
         return {
@@ -178,6 +204,9 @@ class WalkRepository {
           data: 'Já tem um passeio em andamento',
         };
       }
+
+      const selectedDogs =
+        dogs?.filter(dog => dogsIds.includes(dog._id?.toString())) || [];
 
       const {costDetails, receivedLocation} = calculation;
 
@@ -208,6 +237,12 @@ class WalkRepository {
           durationMinutes,
           numberOfDogs,
           receivedLocation,
+          dogs: selectedDogs.map(dog => ({
+            _id: dog._id,
+            name: dog.name,
+            breed: dog.breed,
+            size: dog.size,
+          })),
         },
       };
 
@@ -286,6 +321,19 @@ class WalkRepository {
           data: 'Não foi possível solicitar o passeio.',
         };
       }
+
+      const notification = {
+        userId: new ObjectId(dogWalkerId as string),
+        role: UserRole.DogWalker,
+        title: 'Novo Passeio Disponível!',
+        message: 'Você recebeu uma solicitação de passeio. Aceita o passeio?',
+        type: NotificationEnum.Walk,
+        createdAt: new Date(),
+        read: false,
+        extraData: requestId,
+      };
+
+      this.notificationCollection.insertOne(notification);
 
       return {
         status: 200,
@@ -405,7 +453,11 @@ class WalkRepository {
         };
       }
 
-      const {customerStripeId, defaultPayment} = ownerExists;
+      const {
+        customerStripeId,
+        defaultPayment,
+        deviceToken: ownerDeviceToken,
+      } = ownerExists;
       const {stripeAccountId} = dogWalkerExists;
       const {totalCost} = walk;
 
@@ -476,6 +528,7 @@ class WalkRepository {
                 requestId,
                 status: WalkEvents.ACCEPTED_SUCCESSFULLY,
               },
+              isOnline: false,
             },
           },
         ),
@@ -494,6 +547,29 @@ class WalkRepository {
         dogWalkerToken: dogWalkerExists.deviceToken,
         ownerToken: ownerExists?.deviceToken ?? '',
       });
+
+      await NotificatinUtils.sendNotification({
+        title: 'Passeio Aceito!',
+        body: 'Seu dog walker aceitou a solicitação. O passeio começará em breve.',
+        token: ownerDeviceToken,
+        data: {
+          requestId: requestId.toString(),
+        },
+      });
+
+      const notification = {
+        userId: owner._id,
+        role: UserRole.Owner,
+        title: 'Passeio Aceito!',
+        message:
+          'Seu dog walker aceitou a solicitação. O passeio começará em breve.',
+        type: NotificationEnum.Walk,
+        createdAt: new Date(),
+        read: false,
+        extraData: requestId,
+      };
+
+      this.notificationCollection.insertOne(notification);
 
       return {
         status: 200,
@@ -570,15 +646,16 @@ class WalkRepository {
       const requests = await this.requestRideCollection
         .find(
           {
-            'calculation.ownerId': ownerId,
+            'displayData.owner._id': new ObjectId(ownerId),
             status: WalkEvents.COMPLETED,
           },
           {
             projection: {
               _id: 1,
-              'dogWalker.name': 1,
-              'dogWalker.profileUrl': 1,
-              'calculation.costDetails.walkPrice.price': 1,
+              'displayData.dogWalker.name': 1,
+              'displayData.dogWalker._id': 1,
+              'displayData.walk.totalCost': 1,
+              'displayData.walk.durationMinutes': 1,
               createdAt: 1,
             },
           },
@@ -588,27 +665,23 @@ class WalkRepository {
         .toArray();
 
       const responses = requests.map(request => {
-        const {_id, dogWalker, calculation, createdAt} = request;
-        const {name, profileUrl} = dogWalker ?? {};
-
-        const {costDetails} = calculation ?? {};
-        const {walkPrice} = costDetails ?? {};
-        const {price} = walkPrice ?? {};
+        const {
+          _id,
+          displayData: {dogWalker, walk},
+          createdAt,
+        } = request;
 
         return {
           _id,
-          dogWalker: {
-            name: name ?? null,
-            profileUrl: profileUrl ?? null,
-          },
-          price: price ?? null,
-          startDate: createdAt ?? null,
+          dogWalker,
+          walk,
+          startDate: createdAt,
         };
       });
 
       return {
         status: 200,
-        data: responses,
+        data: responses as unknown as WalkProps[],
       };
     } catch (error) {
       console.error('Erro ao listar solicitação:', error);
@@ -644,7 +717,11 @@ class WalkRepository {
 
       const {owner, dogWalker} = request.displayData;
 
-      if (!owner || !dogWalker) {
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(owner._id as string),
+      });
+
+      if (!ownerExists || !dogWalker) {
         return {
           status: 400,
           data: 'Informações de proprietário ou passeador estão ausentes.',
@@ -683,6 +760,31 @@ class WalkRepository {
         SocketResponse.Walk,
         WalkEvents.REQUEST_DENIED,
       );
+
+      const {deviceToken} = ownerExists;
+
+      await NotificatinUtils.sendNotification({
+        title: 'Passeio Não Aceito',
+        body: 'Infelizmente, o dog walker não pôde aceitar sua solicitação. Tente novamente ou escolha outro dog walker.',
+        token: deviceToken,
+        data: {
+          requestId: requestId.toString(),
+        },
+      });
+
+      const notification = {
+        userId: owner._id,
+        role: UserRole.Owner,
+        title: 'Passeio Não Aceito',
+        message:
+          'Infelizmente, o dog walker não pôde aceitar sua solicitação. Tente novamente ou escolha outro dog walker.',
+        type: NotificationEnum.Walk,
+        createdAt: new Date(),
+        read: false,
+        extraData: requestId,
+      };
+
+      this.notificationCollection.insertOne(notification);
 
       return {
         status: 200,
@@ -730,7 +832,11 @@ class WalkRepository {
 
       const {owner, dogWalker, walk} = displayData;
 
-      if (!owner || !dogWalker || !paymentIntentId || !walk) {
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(owner._id as string),
+      });
+
+      if (!ownerExists || !dogWalker || !paymentIntentId || !walk) {
         return {
           status: 500,
           data: 'Erro interno.',
@@ -789,6 +895,31 @@ class WalkRepository {
         WalkEvents.CANCELLED,
       );
 
+      const {deviceToken} = ownerExists;
+
+      await NotificatinUtils.sendNotification({
+        title: 'Passeio Cancelado',
+        body: 'O dog walker precisou cancelar o passeio, mas não se preocupe! Escolha outro dog walker e continue garantindo momentos felizes para seu pet!',
+        token: deviceToken,
+        data: {
+          requestId: requestId.toString(),
+        },
+      });
+
+      const notification = {
+        userId: owner._id,
+        role: UserRole.Owner,
+        title: 'Passeio Cancelado',
+        message:
+          'O dog walker precisou cancelar o passeio, mas não se preocupe! Escolha outro dog walker e continue garantindo momentos felizes para seu pet!',
+        type: NotificationEnum.Walk,
+        createdAt: new Date(),
+        read: false,
+        extraData: requestId,
+      };
+
+      this.notificationCollection.insertOne(notification);
+
       return {
         status: 200,
         data: 'Passeio cancelado.',
@@ -831,6 +962,17 @@ class WalkRepository {
 
       const {owner, dogWalker} = displayData;
 
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(owner._id as string),
+      });
+
+      if (!ownerExists) {
+        return {
+          status: 500,
+          data: 'Erro interno.',
+        };
+      }
+
       await Promise.all([
         this.requestRideCollection.updateOne(
           {_id: new ObjectId(requestId)},
@@ -869,6 +1011,31 @@ class WalkRepository {
         SocketResponse.Walk,
         WalkEvents.IN_PROGRESS,
       );
+
+      const {deviceToken} = ownerExists;
+
+      await NotificatinUtils.sendNotification({
+        title: 'Passeio Iniciado!',
+        body: 'O passeio começou! Acompanhe o trajeto em tempo real e aproveite essa experiência incrível para seu pet!',
+        token: deviceToken,
+        data: {
+          requestId: request._id.toString(),
+        },
+      });
+
+      const notification = {
+        userId: owner._id,
+        role: UserRole.Owner,
+        title: 'Passeio Iniciado!',
+        message:
+          'O passeio começou! Acompanhe o trajeto em tempo real e aproveite essa experiência incrível para seu pet!',
+        type: NotificationEnum.Walk,
+        createdAt: new Date(),
+        read: false,
+        extraData: request._id,
+      };
+
+      this.notificationCollection.insertOne(notification);
 
       return {
         status: 200,
@@ -929,7 +1096,11 @@ class WalkRepository {
       const {displayData} = request;
       const {owner, dogWalker, walk} = displayData;
 
-      if (!owner || !dogWalker || !walk) {
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(owner._id as string),
+      });
+
+      if (!ownerExists || !dogWalker || !walk) {
         return {
           status: 500,
           data: 'Erro interno.',
@@ -947,15 +1118,29 @@ class WalkRepository {
           },
         ),
         this.dogWalkersCollection.updateOne(
-          {_id: new ObjectId(dogWalker._id)},
+          {_id: dogWalker._id},
           {
-            $set: {currentWalk: null},
+            $set: {
+              currentWalk: null,
+              pendingReview: {
+                reviewedId: owner._id,
+                profileUrl: owner?.profileUrl,
+                requestId: new ObjectId(requestId),
+              },
+            },
           },
         ),
         this.ownerCollection.updateOne(
-          {_id: new ObjectId(owner._id)},
+          {_id: owner._id},
           {
-            $set: {currentWalk: null},
+            $set: {
+              currentWalk: null,
+              pendingReview: {
+                reviewedId: dogWalker._id,
+                profileUrl: dogWalker?.profileUrl,
+                requestId: new ObjectId(requestId),
+              },
+            },
           },
         ),
       ]);
@@ -966,14 +1151,29 @@ class WalkRepository {
         WalkEvents.COMPLETED,
       );
 
+      const {deviceToken} = ownerExists;
+
       await NotificatinUtils.sendNotification({
         title: 'Passeio Concluído!',
         body: `O passeio com ${dogWalker.name} foi concluído com sucesso.`,
-        token: owner.deviceToken,
+        token: deviceToken,
         data: {
           requestId: requestId.toString(),
         },
       });
+
+      const notification = {
+        userId: owner._id,
+        role: UserRole.Owner,
+        title: 'Passeio Concluído!',
+        message: `O passeio com ${dogWalker.name} foi concluído com sucesso.`,
+        type: NotificationEnum.Walk,
+        createdAt: new Date(),
+        read: false,
+        extraData: request._id,
+      };
+
+      this.notificationCollection.insertOne(notification);
 
       return {
         status: 200,
@@ -1046,6 +1246,123 @@ class WalkRepository {
       return {
         status: 500,
         data: 'Erro interno do servidor',
+      };
+    }
+  }
+
+  async ownerCancelWalk(userId: string): Promise<RepositoryResponse> {
+    try {
+      const ownerExists = await this.ownerCollection.findOne({
+        _id: new ObjectId(userId),
+      });
+
+      if (!ownerExists) {
+        return {
+          status: 400,
+          data: 'Tutor não encontrada.',
+        };
+      }
+
+      const {currentWalk} = ownerExists;
+
+      const request = await this.requestRideCollection.findOne({
+        _id: new ObjectId(currentWalk.requestId),
+      });
+
+      if (!request) {
+        return {
+          status: 400,
+          data: 'Solicitação não encontrada.',
+        };
+      }
+
+      if (request?.status !== WalkEvents.PENDING) {
+        return {
+          status: 400,
+          data: 'Solicitação não pode ser negada.',
+        };
+      }
+
+      const {owner, dogWalker} = request.displayData;
+
+      const dogWalkerExists = await this.dogWalkersCollection.findOne({
+        _id: new ObjectId(dogWalker._id as string),
+      });
+
+      if (!owner || !dogWalkerExists) {
+        return {
+          status: 400,
+          data: 'Informações de proprietário ou passeador estão ausentes.',
+        };
+      }
+
+      await Promise.all([
+        this.requestRideCollection.updateOne(
+          {_id: request._id},
+          {
+            $set: {
+              status: WalkEvents.CANCELLED,
+            },
+          },
+        ),
+        this.dogWalkersCollection.updateOne(
+          {_id: dogWalker._id},
+          {
+            $set: {
+              currentWalk: null,
+            },
+          },
+        ),
+        this.ownerCollection.updateOne(
+          {_id: owner._id},
+          {
+            $set: {
+              currentWalk: null,
+            },
+          },
+        ),
+      ]);
+
+      this.socket.publishEventToRoom(
+        request._id.toString(),
+        SocketResponse.Walk,
+        WalkEvents.REQUEST_DENIED,
+      );
+
+      const {deviceToken} = dogWalkerExists;
+
+      await NotificatinUtils.sendNotification({
+        title: 'Passeio Cancelado',
+        body: 'O tutor precisou cancelar o passeio. Fique disponível para outras oportunidades e continue proporcionando momentos incríveis para os pets!',
+        token: deviceToken,
+        data: {
+          requestId: request._id.toString(),
+        },
+      });
+
+      const notification = {
+        userId: dogWalker._id,
+        role: UserRole.DogWalker,
+        title: 'Passeio Cancelado',
+        message:
+          'O tutor precisou cancelar o passeio. Fique disponível para outras oportunidades e continue proporcionando momentos incríveis para os pets!',
+        type: NotificationEnum.Walk,
+        createdAt: new Date(),
+        read: false,
+        extraData: request._id,
+      };
+
+      this.notificationCollection.insertOne(notification);
+
+      return {
+        status: 200,
+        data: 'Solicitação cancelada.',
+      };
+    } catch (error) {
+      console.log('Error owner cancelling request:', error);
+      return {
+        status: 500,
+        data: 'Erro interno.',
       };
     }
   }
