@@ -373,10 +373,10 @@ class ApplicationRepository {
       const skip = (page - 1) * limit;
 
       const query =
-        status === DogWalkerApplicationStatus.PendingDocuments
+        status === DogWalkerApplicationStatus.PendingReview
           ? {
               $or: [
-                {status: DogWalkerApplicationStatus.PendingDocuments},
+                {status: DogWalkerApplicationStatus.PendingReview},
                 {status: {$exists: false}},
               ],
             }
