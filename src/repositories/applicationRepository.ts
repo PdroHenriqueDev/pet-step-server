@@ -379,6 +379,14 @@ class ApplicationRepository {
                 {status: DogWalkerApplicationStatus.PendingReview},
                 {status: {$exists: false}},
               ],
+              $and: [
+                {'documents.document.path': {$exists: true, $ne: null}},
+                {'documents.selfie.path': {$exists: true, $ne: null}},
+                {'documents.residence.path': {$exists: true, $ne: null}},
+                {'documents.criminalRecord.path': {$exists: true, $ne: null}},
+                {aboutMe: {$exists: true, $ne: null}},
+                {profile: {$exists: true, $ne: null}},
+              ],
             }
           : {status};
 
