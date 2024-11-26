@@ -372,14 +372,24 @@ class ApplicationRepository {
     try {
       const skip = (page - 1) * limit;
 
+      const query =
+        status === DogWalkerApplicationStatus.PendingDocuments
+          ? {
+              $or: [
+                {status: DogWalkerApplicationStatus.PendingDocuments},
+                {status: {$exists: false}},
+              ],
+            }
+          : {status};
+
       const applications = await this.dogWalkerApplicationCollection
-        .find({status})
+        .find(query)
         .skip(skip)
         .limit(limit)
         .toArray();
 
       const totalApplications =
-        await this.dogWalkerApplicationCollection.countDocuments({status});
+        await this.dogWalkerApplicationCollection.countDocuments(query);
 
       return {
         status: 200,
