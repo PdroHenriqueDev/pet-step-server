@@ -47,7 +47,7 @@ export async function sendPasswordResetEmail({
 
     return {
       status: 200,
-      data: 'Email enviado com sucesso',
+      data: 'Email enviado com sucesso.',
     };
   } catch (error) {
     console.log('Erro sending email:', error);
