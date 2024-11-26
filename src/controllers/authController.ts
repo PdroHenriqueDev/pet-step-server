@@ -48,8 +48,8 @@ class AuthController {
 
     const response = await AuthRepository.recoveryPassword({email, role});
 
-    const {status, data} = response;
-    return res.status(status).send(data);
+    const {status} = response;
+    return res.status(status).send(response);
   }
 
   async refreshToken(
