@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import {ApiResponse} from '../interfaces/apitResponse';
 import ApplicationRepository from '../repositories/applicationRepository';
 import {Availability, DogExperience, Transport} from '../types/application';
+import {DogWalkerApplicationStatus} from '../enums/dogWalkerApplicationStatus';
 
 class ApplicationController {
   async sendDocuments(
@@ -148,6 +149,29 @@ class ApplicationController {
       await ApplicationRepository.getDogWalkerApplication(dogWalkerId);
 
     const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async list(req: Request, res: Response): Promise<Response> {
+    const {status: statusApplication} = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (!statusApplication) {
+      return res.status(400).send({
+        status: 400,
+        data: 'O status é obrigatório',
+      });
+    }
+
+    const response = await ApplicationRepository.listApplicationsByStatus(
+      statusApplication as DogWalkerApplicationStatus,
+      page,
+      limit,
+    );
+
+    const {status} = response;
+
     return res.status(status).send(response);
   }
 }

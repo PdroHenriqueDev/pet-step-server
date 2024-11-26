@@ -10,6 +10,7 @@ applicationRouter.get(
   '/documents-status',
   ApplicationController.documentsStatus,
 );
+applicationRouter.get('/list', ApplicationController.list);
 applicationRouter.get('/:dogWalkerId', ApplicationController.application);
 
 applicationRouter.post(

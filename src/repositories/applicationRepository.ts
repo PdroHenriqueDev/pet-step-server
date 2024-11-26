@@ -56,6 +56,7 @@ class ApplicationRepository {
             updatedAt: this.currentDate,
           },
           $setOnInsert: {
+            status: DogWalkerApplicationStatus.PendingDocuments,
             createdAt: this.currentDate,
           },
         },
@@ -182,8 +183,9 @@ class ApplicationRepository {
       );
 
       if (
-        allDocumentsSent &&
-        application.status === DogWalkerApplicationStatus.PendingDocuments
+        (allDocumentsSent &&
+          application.status === DogWalkerApplicationStatus.PendingDocuments) ||
+        (allDocumentsSent && !application.status)
       ) {
         await Promise.all([
           this.dogWalkerApplicationCollection.updateOne(
@@ -358,6 +360,44 @@ class ApplicationRepository {
       return {
         status: 500,
         data: 'Erro ao desativar conta e aplicação',
+      };
+    }
+  }
+
+  async listApplicationsByStatus(
+    status: DogWalkerApplicationStatus,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<RepositoryResponse> {
+    try {
+      const skip = (page - 1) * limit;
+
+      const applications = await this.dogWalkerApplicationCollection
+        .find({status})
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+
+      const totalApplications =
+        await this.dogWalkerApplicationCollection.countDocuments({status});
+
+      return {
+        status: 200,
+        data: {
+          applications,
+          pagination: {
+            page,
+            limit,
+            total: totalApplications,
+            totalPages: Math.ceil(totalApplications / limit),
+          },
+        },
+      };
+    } catch (error) {
+      console.log(`Error fetching applications by status ${status}:`, error);
+      return {
+        status: 500,
+        data: 'Erro interno',
       };
     }
   }
