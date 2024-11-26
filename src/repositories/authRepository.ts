@@ -152,8 +152,8 @@ class AuthRepository {
 
       if (!user) {
         return {
-          status: 404,
-          data: 'Usuário não encontrado.',
+          status: 200,
+          data: 'Email enviado com sucesso.',
         };
       }
 
