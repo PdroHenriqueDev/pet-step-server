@@ -30,10 +30,13 @@ class Owner {
 
     const {name, lastName, email, password, document, address, phone} =
       req.body;
+
+    const normalizedEmail = email.toLowerCase();
+
     const owner: OwnerProps = {
       name,
       lastName,
-      email,
+      email: normalizedEmail,
       phone,
       address,
       document,
