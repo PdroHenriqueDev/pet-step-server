@@ -24,7 +24,13 @@ class AuthController {
       });
     }
 
-    const response = await AuthRepository.auth({email, password, role});
+    const normalizedEmail = email.toLowerCase();
+
+    const response = await AuthRepository.auth({
+      email: normalizedEmail,
+      password,
+      role,
+    });
     const {status} = response;
     return res.status(status).send(response);
   }
@@ -46,7 +52,12 @@ class AuthController {
       });
     }
 
-    const response = await AuthRepository.recoveryPassword({email, role});
+    const normalizedEmail = email.toLowerCase();
+
+    const response = await AuthRepository.recoveryPassword({
+      email: normalizedEmail,
+      role,
+    });
 
     const {status} = response;
     return res.status(status).send(response);
