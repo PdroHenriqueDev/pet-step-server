@@ -24,10 +24,13 @@ class DogWalker {
 
     const {name, lastName, email, password, document, address, phone} =
       req.body;
+
+    const normalizedEmail = email.toLowerCase();
+
     const walker: DogWalkerProps = {
       name,
       lastName,
-      email,
+      email: normalizedEmail,
       phone,
       address,
       document,
