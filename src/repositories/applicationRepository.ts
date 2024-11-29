@@ -312,9 +312,20 @@ class ApplicationRepository {
         },
         {} as Record<string, unknown>,
       );
+
       return {
         status: 200,
-        data: documents,
+        data: {
+          applicationDetails: {
+            dogWalkerId: application.dogWalkerId,
+            status: application.status,
+            createdAt: application.createdAt,
+            updatedAt: application.updatedAt,
+            aboutMe: application.aboutMe,
+            profile: application.profile,
+          },
+          documents,
+        },
       };
     } catch (error) {
       console.log(
