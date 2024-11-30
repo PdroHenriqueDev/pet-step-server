@@ -104,3 +104,48 @@ export async function sendEmailVerification({
     };
   }
 }
+
+export async function sendApprovalEmail(to: string) {
+  const guidelinesLink = 'https://www.petstepapp.com/dog-walker-guidelines';
+
+  const params = {
+    Source: 'noreply@petstepapp.com',
+    Destination: {
+      ToAddresses: [to],
+    },
+    Message: {
+      Body: {
+        Html: {
+          Charset: 'UTF-8',
+          Data: `
+            <p>Olá,</p>
+            <p>Parabéns! Sua inscrição como Dog Walker no Pet Step foi aprovada.</p>
+            <p>Para garantir a melhor experiência para você e os tutores, por favor, leia atentamente as nossas diretrizes:</p>
+            <p><a href="${guidelinesLink}">Guia de Boas Práticas para Dog Walkers</a></p>
+            <p>Se tiver alguma dúvida, entre em contato conosco.</p>
+            <p>Bem-vindo ao Pet Step!</p>
+            <p><em>Por favor, não responda a este e-mail, pois ele foi gerado automaticamente pelo sistema.</em></p>
+          `,
+        },
+      },
+      Subject: {
+        Charset: 'UTF-8',
+        Data: 'Aprovação como Dog Walker - Pet Step',
+      },
+    },
+  };
+
+  try {
+    await ses.sendEmail(params).promise();
+    return {
+      status: 200,
+      data: 'E-mail de aprovação enviado com sucesso.',
+    };
+  } catch (error) {
+    console.error('Erro ao enviar o e-mail de aprovação:', error);
+    return {
+      status: 500,
+      data: 'Erro ao enviar o e-mail de aprovação.',
+    };
+  }
+}

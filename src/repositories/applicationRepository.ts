@@ -9,6 +9,7 @@ import {
 import {DocumentType} from '../types/document';
 import {DogWalkerProfile} from '../interfaces/application';
 import {v4 as uuidv4} from 'uuid';
+import {sendApprovalEmail} from '../utils/sendEmail';
 
 class ApplicationRepository {
   get db() {
@@ -230,6 +231,20 @@ class ApplicationRepository {
     }
   }
 
+  private async approveAllDocuments(dogwalkerId: string): Promise<void> {
+    await this.dogWalkerApplicationCollection.updateOne(
+      {dogWalkerId: new ObjectId(dogwalkerId)},
+      {
+        $set: {
+          'documents.document.status': 'approved',
+          'documents.residence.status': 'approved',
+          'documents.criminalRecord.status': 'approved',
+          'documents.selfie.status': 'approved',
+        },
+      },
+    );
+  }
+
   async updateStatus(
     dogwalkerId: string,
     status: DogWalkerApplicationStatus,
@@ -275,6 +290,13 @@ class ApplicationRepository {
         },
       ),
     ]);
+
+    const {email} = dogWalker;
+
+    if (status === DogWalkerApplicationStatus.PendingTerms) {
+      await this.approveAllDocuments(dogwalkerId);
+      await sendApprovalEmail(email);
+    }
 
     return {
       status: 200,
