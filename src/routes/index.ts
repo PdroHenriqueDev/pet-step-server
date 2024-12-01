@@ -8,6 +8,7 @@ import applicationRoutes from './applicationRoutes';
 import notificationRoutes from './notificationRoutes';
 import adminRoutes from './adminRoutes';
 import feedbackRoutes from './feedbackRoutes';
+import staticDataRoutes from './staticDataRoutes';
 import {authenticateToken} from '../middleware/authenticateToken';
 
 const router = express.Router();
@@ -25,5 +26,6 @@ router.use('/application', authenticateToken, applicationRoutes);
 router.use('/notification', authenticateToken, notificationRoutes);
 router.use('/admin', adminRoutes);
 router.use('/feedback', authenticateToken, feedbackRoutes);
+router.use('/static-data', authenticateToken, staticDataRoutes);
 
 export default router;
