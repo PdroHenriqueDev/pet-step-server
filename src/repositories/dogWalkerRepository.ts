@@ -539,6 +539,14 @@ class DogWalkerRepository {
         stripeAccountIdToUse = createStripeAccount.id;
       }
 
+      await StripeUtils.addExternalAccount({
+        accountId: stripeAccountIdToUse,
+        name,
+        lastName,
+        routingNumber: `${bankCode}-${agencyNumber}`,
+        accountNumber,
+      });
+
       await this.dogWalkersCollection.updateOne(
         {_id: new ObjectId(dogWalkerId)},
         {
@@ -558,14 +566,6 @@ class DogWalkerRepository {
           },
         },
       );
-
-      await StripeUtils.addExternalAccount({
-        accountId: stripeAccountIdToUse,
-        name,
-        lastName,
-        routingNumber: `${bankCode}-${agencyNumber}`,
-        accountNumber,
-      });
 
       return {
         status: 200,
