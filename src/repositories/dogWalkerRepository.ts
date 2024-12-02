@@ -537,6 +537,16 @@ class DogWalkerRepository {
         });
 
         stripeAccountIdToUse = createStripeAccount.id;
+
+        await this.dogWalkersCollection.updateOne(
+          {_id: new ObjectId(dogWalkerId)},
+          {
+            $set: {
+              stripeAccountId: stripeAccountIdToUse,
+              updatedAt: this.currentDate,
+            },
+          },
+        );
       }
 
       await StripeUtils.addExternalAccount({
@@ -551,7 +561,6 @@ class DogWalkerRepository {
         {_id: new ObjectId(dogWalkerId)},
         {
           $set: {
-            stripeAccountId: stripeAccountIdToUse,
             birthdate: {
               day: dob.day,
               month: dob.month,
@@ -572,7 +581,7 @@ class DogWalkerRepository {
         data: 'Conta adicionada com sucesso',
       };
     } catch (error) {
-      console.log('Erro ao adicionar conta Stripe:', error);
+      console.log('Error adding Stripe account:', error);
       return {
         status: 500,
         data: 'Erro interno',
