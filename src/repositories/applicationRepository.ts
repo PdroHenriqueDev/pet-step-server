@@ -9,7 +9,7 @@ import {
 import {DocumentType} from '../types/document';
 import {DogWalkerProfile} from '../interfaces/application';
 import {v4 as uuidv4} from 'uuid';
-import {sendApprovalEmail} from '../utils/sendEmail';
+import {sendApprovalEmail, sendRejectionEmail} from '../utils/sendEmail';
 
 class ApplicationRepository {
   get db() {
@@ -231,15 +231,18 @@ class ApplicationRepository {
     }
   }
 
-  private async approveAllDocuments(dogwalkerId: string): Promise<void> {
+  private async changeAllDocumentsStatus(
+    dogwalkerId: string,
+    status: DocumentReviewStatus,
+  ): Promise<void> {
     await this.dogWalkerApplicationCollection.updateOne(
       {dogWalkerId: new ObjectId(dogwalkerId)},
       {
         $set: {
-          'documents.document.status': 'approved',
-          'documents.residence.status': 'approved',
-          'documents.criminalRecord.status': 'approved',
-          'documents.selfie.status': 'approved',
+          'documents.document.status': status,
+          'documents.residence.status': status,
+          'documents.criminalRecord.status': status,
+          'documents.selfie.status': status,
         },
       },
     );
@@ -248,6 +251,7 @@ class ApplicationRepository {
   async updateStatus(
     dogwalkerId: string,
     status: DogWalkerApplicationStatus,
+    rejectionReasons?: string[],
   ): Promise<RepositoryResponse> {
     if (!Object.values(DogWalkerApplicationStatus).includes(status)) {
       return {
@@ -270,33 +274,49 @@ class ApplicationRepository {
         data: 'Aplicação não encontrada',
       };
 
-    await Promise.all([
-      this.dogWalkerApplicationCollection.updateOne(
-        {dogWalkerId: new ObjectId(dogwalkerId)},
-        {
-          $set: {
-            status,
-            updatedAt: this.currentDate,
-          },
-        },
-      ),
-      this.dogWalkersCollection.updateOne(
-        {_id: new ObjectId(dogwalkerId)},
-        {
-          $set: {
-            status,
-            updatedAt: this.currentDate,
-          },
-        },
-      ),
-    ]);
+    const updates: Record<string, unknown> = {
+      status,
+      updatedAt: this.currentDate,
+    };
+
+    if (status === DogWalkerApplicationStatus.Rejected && rejectionReasons) {
+      updates.rejectionReasons = {
+        reasons: Array.isArray(rejectionReasons) ? rejectionReasons : [],
+        createdAt: this.currentDate,
+      };
+    }
 
     const {email} = dogWalker;
 
     if (status === DogWalkerApplicationStatus.PendingTerms) {
-      await this.approveAllDocuments(dogwalkerId);
+      await this.changeAllDocumentsStatus(
+        dogwalkerId,
+        DocumentReviewStatus.Approved,
+      );
       await sendApprovalEmail(email);
     }
+
+    if (status === DogWalkerApplicationStatus.Rejected && rejectionReasons) {
+      await this.changeAllDocumentsStatus(
+        dogwalkerId,
+        DocumentReviewStatus.Rejected,
+      );
+      await sendRejectionEmail({
+        to: email,
+        reasons: rejectionReasons,
+      });
+    }
+
+    await Promise.all([
+      this.dogWalkerApplicationCollection.updateOne(
+        {dogWalkerId: new ObjectId(dogwalkerId)},
+        {$set: updates},
+      ),
+      this.dogWalkersCollection.updateOne(
+        {_id: new ObjectId(dogwalkerId)},
+        {$set: updates},
+      ),
+    ]);
 
     return {
       status: 200,
