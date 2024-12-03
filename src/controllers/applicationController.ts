@@ -122,11 +122,12 @@ class ApplicationController {
     res: Response,
   ): Promise<Response<ApiResponse>> {
     const {dogWalkerId} = req.params;
-    const {statusApplication} = req.body;
+    const {statusApplication, rejectionReasons} = req.body;
 
     const response = await ApplicationRepository.updateStatus(
       dogWalkerId,
       statusApplication,
+      rejectionReasons,
     );
 
     const {status} = response;

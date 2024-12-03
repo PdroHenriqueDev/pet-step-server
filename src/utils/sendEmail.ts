@@ -149,3 +149,56 @@ export async function sendApprovalEmail(to: string) {
     };
   }
 }
+
+export async function sendRejectionEmail({
+  to,
+  reasons,
+}: {
+  to: string;
+  reasons: string[];
+}) {
+  const reasonsList = reasons.map(reason => `<li>${reason}</li>`).join('');
+
+  const htmlContent = `
+    <p>Olá,</p>
+    <p>Infelizmente, após analisar sua inscrição como Dog Walker no Pet Step, não foi possível aprová-la no momento.</p>
+    <p>Abaixo estão os motivos:</p>
+    <ul>${reasonsList}</ul>
+    <p>Se você acredita que houve algum engano ou gostaria de corrigir as informações fornecidas, entre em contato conosco para verificar as possibilidades.</p>
+    <p>Agradecemos seu interesse no Pet Step e esperamos poder colaborar no futuro.</p>
+    <p><em>Por favor, não responda a este e-mail, pois ele foi gerado automaticamente pelo sistema.</em></p>
+  `;
+
+  const params = {
+    Source: 'noreply@petstepapp.com',
+    Destination: {
+      ToAddresses: [to],
+    },
+    Message: {
+      Body: {
+        Html: {
+          Charset: 'UTF-8',
+          Data: htmlContent,
+        },
+      },
+      Subject: {
+        Charset: 'UTF-8',
+        Data: 'Sua Inscrição no Pet Step - Resultado',
+      },
+    },
+  };
+
+  try {
+    await ses.sendEmail(params).promise();
+    return {
+      status: 200,
+      data: 'E-mail de rejeição enviado com sucesso.',
+    };
+  } catch (error) {
+    console.error('Erro ao enviar o e-mail de rejeição:', error);
+    return {
+      status: 500,
+      data: 'Erro ao enviar o e-mail de rejeição.',
+    };
+  }
+}
