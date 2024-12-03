@@ -11,5 +11,10 @@ router.post(
   authenticateToken,
   AdminController.resetUserPassword,
 );
+router.post(
+  '/dog-walker/add-account',
+  authenticateToken,
+  AdminController.addAccountToDogWalker,
+);
 
 export default router;
