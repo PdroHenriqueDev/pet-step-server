@@ -549,11 +549,18 @@ class DogWalkerRepository {
         );
       }
 
+      const [agencyWithoutDV, agencyDV] = [
+        agencyNumber.slice(0, 4),
+        agencyNumber.length === 5 ? agencyNumber.slice(-1) : null,
+      ];
+
       await StripeUtils.addExternalAccount({
         accountId: stripeAccountIdToUse,
         name,
         lastName,
-        routingNumber: `${bankCode}-${agencyNumber}`,
+        routingNumber: agencyDV
+          ? `${bankCode}-${agencyWithoutDV}-${agencyDV}`
+          : `${bankCode}-${agencyWithoutDV}`,
         accountNumber,
       });
 
