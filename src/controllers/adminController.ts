@@ -104,9 +104,24 @@ class Admin {
       return res.status(400).send({status: 400, data: 'Requsição inválida'});
     }
 
+    const numericFields = {
+      bankCode: bankCode as string,
+      agencyNumber: agencyNumber as string,
+      accountNumber: accountNumber as string,
+    };
+
+    for (const [fieldName, value] of Object.entries(numericFields)) {
+      if (!/^\d+$/.test(value)) {
+        return res.status(400).send({
+          status: 400,
+          data: `O campo ${fieldName} deve conter apenas números.`,
+        });
+      }
+    }
+
     if (!reqIp) {
       console.log('Error getting req ip');
-      return res.status(500).send({status: 500, data: 'Erro'});
+      return res.status(500).send({status: 500, data: 'Erro interno'});
     }
 
     const response = await DogWalkerRepository.addStripeAccount({
