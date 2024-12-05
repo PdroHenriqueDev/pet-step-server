@@ -31,15 +31,27 @@ class Owner {
     const {name, lastName, email, password, document, address, phone} =
       req.body;
 
-    const normalizedEmail = email.toLowerCase();
+    const normalizedName = name.trim().replace(/\s+/g, ' ');
+    const normalizedLastName = lastName.trim().replace(/\s+/g, ' ');
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedDocument = document.trim();
+    const normalizedPhone = phone.trim();
+    const normalizedAddress = {
+      zipCode: address.zipCode.trim(),
+      street: address.street.trim().replace(/\s+/g, ' '),
+      houseNumber: address.houseNumber.trim(),
+      neighborhood: address.neighborhood.trim().replace(/\s+/g, ' '),
+      city: address.city.trim().replace(/\s+/g, ' '),
+      state: address.state.trim().toUpperCase(),
+    };
 
     const owner: OwnerProps = {
-      name,
-      lastName,
+      name: normalizedName,
+      lastName: normalizedLastName,
       email: normalizedEmail,
-      phone,
-      address,
-      document,
+      phone: normalizedPhone,
+      address: normalizedAddress,
+      document: normalizedDocument,
       password,
     };
 
