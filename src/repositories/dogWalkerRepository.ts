@@ -490,6 +490,7 @@ class DogWalkerRepository {
     bankCode,
     agencyNumber,
     accountNumber,
+    zipCode,
   }: {
     dogWalkerId: string;
     reqIp: string;
@@ -501,6 +502,7 @@ class DogWalkerRepository {
       month: number;
       year: number;
     };
+    zipCode?: number;
   }): Promise<RepositoryResponse> {
     try {
       const dogWalkerExists = await this.dogWalkersCollection.findOne({
@@ -528,7 +530,7 @@ class DogWalkerRepository {
             city: address.city,
             country: 'BR',
             state: address.state,
-            postal_code: address.zipCode,
+            postal_code: zipCode ?? address.zipCode,
             line1: address.street,
           },
           reqIp,
