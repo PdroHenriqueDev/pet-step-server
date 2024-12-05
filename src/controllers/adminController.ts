@@ -88,8 +88,14 @@ class Admin {
       return res.status(500).send({status: 500, data: 'Error'});
     }
     const reqIp = req.ip;
-    const {dogWalkerId, bankCode, agencyNumber, accountNumber, birthdate} =
-      req.body;
+    const {
+      dogWalkerId,
+      bankCode,
+      agencyNumber,
+      accountNumber,
+      birthdate,
+      zipCode,
+    } = req.body;
 
     const requiredFields = [
       'dogWalkerId',
@@ -131,6 +137,7 @@ class Admin {
       agencyNumber,
       accountNumber,
       dob: birthdate,
+      zipCode,
     });
 
     const {status} = response;
