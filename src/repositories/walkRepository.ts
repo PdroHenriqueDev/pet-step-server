@@ -98,15 +98,6 @@ class WalkRepository {
         };
       }
 
-      const {defaultPayment} = ownerExists;
-
-      if (!defaultPayment) {
-        return {
-          status: 400,
-          data: 'Selecione um meio de pagamento.',
-        };
-      }
-
       const costDetails = calculateWalkCost({
         numberOfDogs: dogs.length,
         walkDurationMinutes,
@@ -196,12 +187,19 @@ class WalkRepository {
         };
       }
 
-      const {currentWalk, dogs} = owner;
+      const {currentWalk, dogs, defaultPayment} = owner;
 
       if (currentWalk) {
         return {
           status: 409,
           data: 'Já tem um passeio em andamento',
+        };
+      }
+
+      if (!defaultPayment) {
+        return {
+          status: 400,
+          data: 'Selecione um meio de pagamento.',
         };
       }
 
