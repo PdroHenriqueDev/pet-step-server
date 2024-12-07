@@ -332,9 +332,9 @@ class Owner {
   }
 
   async notifyAll(req: Request, res: Response) {
-    const isAdming = req.user?.role === UserRole.Admin;
+    const isAdmin = req.user?.role === UserRole.Admin;
 
-    if (!isAdming) {
+    if (!isAdmin) {
       return res.status(401).send({
         status: 401,
         data: 'Usuário não autorizado.',
