@@ -9,6 +9,7 @@ import {generateAccessToken} from '../utils/authToken';
 import {UserRole} from '../enums/role';
 import {sendEmailVerification} from '../utils/sendEmail';
 import {uploadToS3} from '../utils/s3Utils';
+import NotificatinUtils from '../utils/notification';
 
 class OwnerRepository {
   get db() {
@@ -484,6 +485,62 @@ class OwnerRepository {
       return {
         status: 500,
         data: 'Erro interno ao atualizar a imagem de perfil',
+      };
+    }
+  }
+
+  async notifyActiveOwners(
+    message: string,
+    title: string,
+  ): Promise<RepositoryResponse> {
+    try {
+      const activeOwners = await this.ownerCollection
+        .find({
+          status: {$ne: 'deactivated'},
+          deviceToken: {$exists: true, $ne: null},
+        })
+        .toArray();
+
+      if (activeOwners.length === 0) {
+        return {
+          status: 400,
+          data: 'Nenhum dono ativo encontrado para enviar notificações.',
+        };
+      }
+
+      const notificationResults: PromiseSettledResult<{
+        status: number;
+        data: string;
+      }>[] = await Promise.allSettled(
+        activeOwners.map(owner =>
+          NotificatinUtils.sendNotification({
+            title,
+            body: message,
+            token: owner.deviceToken,
+          }),
+        ),
+      );
+
+      const successfulNotifications = notificationResults.filter(
+        res => res.status === 'fulfilled' && res.value.status === 200,
+      );
+      const failedNotifications = notificationResults.filter(
+        res => res.status === 'rejected' || res.value?.status !== 200,
+      );
+
+      return {
+        status: 200,
+        data: {
+          successfulNotifications: `${successfulNotifications.length} notificações enviadas com sucesso.`,
+          failedNotifications: `${failedNotifications.length} notificações falharam.`,
+        },
+      };
+    } catch (error) {
+      console.error('Erro sending notifications:', error);
+
+      return {
+        status: 500,
+        data: 'Erro ao enviar notificações.',
       };
     }
   }

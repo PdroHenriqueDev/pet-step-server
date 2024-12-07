@@ -14,7 +14,7 @@ router.post(
   upload.single('profile'),
   Owner.imageProfile,
 );
-
+router.post('/notify-all', Owner.notifyAll);
 router.post('/', Owner.store);
 
 router.get('/payment/set-up-intent', authenticateToken, Owner.paymentIntent);

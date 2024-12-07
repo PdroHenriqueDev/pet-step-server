@@ -8,6 +8,7 @@ import {
   getSizeCategoryEnglish,
 } from '../utils/dog';
 import {ApiResponse} from '../interfaces/apitResponse';
+import {UserRole} from '../enums/role';
 
 class Owner {
   async store(req: Request, res: Response) {
@@ -326,6 +327,23 @@ class Owner {
 
     const response = await OwnerRepository.updateProfileImage(userId, file);
 
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async notifyAll(req: Request, res: Response) {
+    const isAdming = req.user?.role === UserRole.Admin;
+
+    if (!isAdming) {
+      return res.status(401).send({
+        status: 401,
+        data: 'Usuário não autorizado.',
+      });
+    }
+
+    const {message, title} = req.body;
+
+    const response = await OwnerRepository.notifyActiveOwners(message, title);
     const {status} = response;
     return res.status(status).send(response);
   }
