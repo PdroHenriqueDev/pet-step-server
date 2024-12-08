@@ -3,6 +3,7 @@ import {ApiResponse} from '../interfaces/apitResponse';
 import ApplicationRepository from '../repositories/applicationRepository';
 import {Availability, DogExperience, Transport} from '../types/application';
 import {DogWalkerApplicationStatus} from '../enums/dogWalkerApplicationStatus';
+import {UserRole} from '../enums/role';
 
 class ApplicationController {
   async sendDocuments(
@@ -121,6 +122,14 @@ class ApplicationController {
     req: Request,
     res: Response,
   ): Promise<Response<ApiResponse>> {
+    const isAdmin = req.user.role === UserRole.Admin;
+
+    if (!isAdmin) {
+      return res
+        .status(401)
+        .send({status: 401, data: 'Usuário não autorizado.'});
+    }
+
     const {dogWalkerId} = req.params;
     const {statusApplication, rejectionReasons} = req.body;
 
@@ -154,6 +163,14 @@ class ApplicationController {
   }
 
   async list(req: Request, res: Response): Promise<Response> {
+    const isAdmin = req.user.role === UserRole.Admin;
+
+    if (!isAdmin) {
+      return res
+        .status(401)
+        .send({status: 401, data: 'Usuário não autorizado.'});
+    }
+
     const {status: statusApplication} = req.query;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
