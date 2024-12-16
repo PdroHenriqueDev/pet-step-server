@@ -24,8 +24,6 @@ class ApplicationRepository {
     return this.db.collection('dogwalker');
   }
 
-  currentDate = new Date();
-
   async addDocument(
     dogWalkerId: string,
     documentType: DocumentType,
@@ -54,11 +52,11 @@ class ApplicationRepository {
         {
           $set: {
             [`documents.${documentType}`]: documentData,
-            updatedAt: this.currentDate,
+            updatedAt: new Date(),
           },
           $setOnInsert: {
             status: DogWalkerApplicationStatus.PendingDocuments,
-            createdAt: this.currentDate,
+            createdAt: new Date(),
           },
         },
         {upsert: true},
@@ -90,7 +88,7 @@ class ApplicationRepository {
         {
           $set: {
             aboutMe,
-            updatedAt: this.currentDate,
+            updatedAt: new Date(),
           },
         },
         {upsert: true},
@@ -127,7 +125,7 @@ class ApplicationRepository {
         {
           $set: {
             profile,
-            updatedAt: this.currentDate,
+            updatedAt: new Date(),
           },
         },
         {upsert: true},
@@ -194,7 +192,7 @@ class ApplicationRepository {
             {
               $set: {
                 status: DogWalkerApplicationStatus.PendingReview,
-                updatedAt: this.currentDate,
+                updatedAt: new Date(),
               },
             },
           ),
@@ -203,7 +201,7 @@ class ApplicationRepository {
             {
               $set: {
                 status: DogWalkerApplicationStatus.PendingReview,
-                updatedAt: this.currentDate,
+                updatedAt: new Date(),
               },
             },
           ),
@@ -276,13 +274,13 @@ class ApplicationRepository {
 
     const updates: Record<string, unknown> = {
       status,
-      updatedAt: this.currentDate,
+      updatedAt: new Date(),
     };
 
     if (status === DogWalkerApplicationStatus.Rejected && rejectionReasons) {
       updates.rejectionReasons = {
         reasons: Array.isArray(rejectionReasons) ? rejectionReasons : [],
-        createdAt: this.currentDate,
+        createdAt: new Date(),
       };
     }
 
@@ -389,7 +387,7 @@ class ApplicationRepository {
           {
             $set: {
               status: DogWalkerApplicationStatus.Deactivated,
-              updatedAt: this.currentDate,
+              updatedAt: new Date(),
             },
           },
         ),
@@ -398,7 +396,7 @@ class ApplicationRepository {
           {
             $set: {
               status: DogWalkerApplicationStatus.Deactivated,
-              updatedAt: this.currentDate,
+              updatedAt: new Date(),
             },
           },
         ),

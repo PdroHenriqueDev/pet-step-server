@@ -44,8 +44,6 @@ class WalkRepository {
     return this.db.collection('notification');
   }
 
-  currentDate = new Date();
-
   async getRequestById(requestId: string): Promise<RepositoryResponse> {
     const requestRide = await this.requestRideCollection.findOne({
       _id: new ObjectId(requestId),
@@ -110,8 +108,8 @@ class WalkRepository {
           dogs,
           costDetails,
           receivedLocation,
-          createdAt: this.currentDate,
-          updatedAt: this.currentDate,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         });
 
       if (!insertResult.insertedId) {
@@ -248,8 +246,8 @@ class WalkRepository {
         calculationId: calculation._id,
         displayData,
         status: WalkEvents.PENDING,
-        createdAt: this.currentDate,
-        updatedAt: this.currentDate,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       const requestId = requestRideCollection.insertedId;

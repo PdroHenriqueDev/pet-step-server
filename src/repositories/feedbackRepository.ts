@@ -19,8 +19,6 @@ class FeedbackRepository {
     return this.db.collection('owner');
   }
 
-  currentDate = new Date();
-
   async saveFeedback({
     reviewerId,
     reviewedId,
@@ -70,7 +68,7 @@ class FeedbackRepository {
           rate,
           comment,
           requestId: new ObjectId(requestId),
-          createdAt: this.currentDate,
+          createdAt: new Date(),
         }),
         reviewedCollection.updateOne(
           {_id: new ObjectId(reviewedId)},

@@ -46,8 +46,6 @@ class DogWalkerRepository {
     return SocketInit.getInstance();
   }
 
-  currentDate = new Date();
-
   async addDogWalker(dogWalker: DogWalkerProps): Promise<RepositoryResponse> {
     try {
       // this.dogWalkersCollection.createIndex({location: '2dsphere'});
@@ -75,8 +73,8 @@ class DogWalkerRepository {
         totalRatings: 0,
         isOnline: false,
         status: DogWalkerApplicationStatus.PendingDocuments,
-        createdAt: this.currentDate,
-        updatedAt: this.currentDate,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       const data = await this.dogWalkersCollection.insertOne(newDogWalker);
@@ -123,7 +121,7 @@ class DogWalkerRepository {
 
       await this.dogWalkersCollection.updateOne(
         {_id: new ObjectId(walkerId)},
-        {$set: {location, updatedAt: this.currentDate}},
+        {$set: {location, updatedAt: new Date()}},
       );
 
       return {
@@ -188,7 +186,7 @@ class DogWalkerRepository {
         location?: {type: string; coordinates: string[]};
       } = {
         isOnline,
-        updatedAt: this.currentDate,
+        updatedAt: new Date(),
       };
 
       if (isOnline) {
@@ -387,7 +385,7 @@ class DogWalkerRepository {
     try {
       await this.dogWalkersCollection.updateOne(
         {_id: new ObjectId(walkerId)},
-        {$set: {deviceToken, updatedAt: this.currentDate}},
+        {$set: {deviceToken, updatedAt: new Date()}},
       );
 
       return {
@@ -413,9 +411,9 @@ class DogWalkerRepository {
               status: DogWalkerApplicationStatus.Approved,
               termsAccepted: {
                 version: '1.0',
-                acceptedAt: this.currentDate,
+                acceptedAt: new Date(),
               },
-              updatedAt: this.currentDate,
+              updatedAt: new Date(),
             },
           },
         ),
@@ -424,7 +422,7 @@ class DogWalkerRepository {
           {
             $set: {
               status: DogWalkerApplicationStatus.Approved,
-              updatedAt: this.currentDate,
+              updatedAt: new Date(),
             },
           },
         ),
@@ -545,7 +543,7 @@ class DogWalkerRepository {
           {
             $set: {
               stripeAccountId: stripeAccountIdToUse,
-              updatedAt: this.currentDate,
+              updatedAt: new Date(),
             },
           },
         );
@@ -580,7 +578,7 @@ class DogWalkerRepository {
               agencyNumber,
               accountNumber,
             },
-            updatedAt: this.currentDate,
+            updatedAt: new Date(),
           },
         },
       );
