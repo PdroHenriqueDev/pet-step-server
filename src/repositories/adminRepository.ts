@@ -21,8 +21,6 @@ class AdminRepository {
     return this.db.collection('owner');
   }
 
-  currentDate = new Date();
-
   async add(admin: {
     email: string;
     password: string;
@@ -45,6 +43,7 @@ class AdminRepository {
       const newAdmin = {
         email,
         password: hashedPassword,
+        createdAt: new Date(),
       };
 
       const data = await this.adminCollection.insertOne(newAdmin);

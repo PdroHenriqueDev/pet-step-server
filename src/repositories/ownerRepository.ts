@@ -20,8 +20,6 @@ class OwnerRepository {
     return this.db.collection('owner');
   }
 
-  currentDate = new Date();
-
   async add(owner: Owner): Promise<RepositoryResponse> {
     try {
       const {email, document, password} = owner;
@@ -64,8 +62,8 @@ class OwnerRepository {
         rate: 5,
         totalRatings: 0,
         currentWalk: null,
-        createdAt: this.currentDate,
-        updatedAt: this.currentDate,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       const data = await this.ownerCollection.insertOne(newOwner);
@@ -214,7 +212,7 @@ class OwnerRepository {
     try {
       await this.ownerCollection.updateOne(
         {_id: new ObjectId(walkerId)},
-        {$set: {deviceToken, updatedAt: this.currentDate}},
+        {$set: {deviceToken, updatedAt: new Date()}},
       );
 
       return {
@@ -258,7 +256,7 @@ class OwnerRepository {
         {_id: new ObjectId(ownerId)},
         {
           $push: {dogs: dogWithId} as unknown as PushOperator<Document>,
-          $set: {updatedAt: this.currentDate},
+          $set: {updatedAt: new Date()},
         },
       );
 
@@ -383,7 +381,7 @@ class OwnerRepository {
             'dogs.$.name': dog.name,
             'dogs.$.breed': dog.breed,
             'dogs.$.size': dog.size,
-            updatedAt: this.currentDate,
+            updatedAt: new Date(),
           },
         },
       );
@@ -416,7 +414,7 @@ class OwnerRepository {
           $pull: {
             dogs: {_id: new ObjectId(dogId)},
           } as unknown as PushOperator<Document>,
-          $set: {updatedAt: this.currentDate},
+          $set: {updatedAt: new Date()},
         },
       );
 

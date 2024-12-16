@@ -30,8 +30,6 @@ class AuthRepository {
     return this.db.collection('dogWalkerApplication');
   }
 
-  currentDate = new Date();
-
   async auth({
     email,
     password,
@@ -92,7 +90,7 @@ class AuthRepository {
             {
               $set: {
                 status: DogWalkerApplicationStatus.PendingDocuments,
-                updatedAt: this.currentDate,
+                updatedAt: new Date(),
               },
             },
           ),
@@ -101,7 +99,7 @@ class AuthRepository {
             {
               $set: {
                 status: DogWalkerApplicationStatus.PendingDocuments,
-                updatedAt: this.currentDate,
+                updatedAt: new Date(),
               },
             },
           ),
@@ -258,7 +256,7 @@ class AuthRepository {
         {
           $set: {
             status: UserStatus.Deactivated,
-            updatedAt: this.currentDate,
+            updatedAt: new Date(),
           },
         },
       );
