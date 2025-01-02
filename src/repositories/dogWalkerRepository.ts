@@ -11,7 +11,10 @@ import {DogWalkerApplicationStatus} from '../enums/dogWalkerApplicationStatus';
 import {uploadToS3} from '../utils/s3Utils';
 import {generateAccessToken} from '../utils/authToken';
 import {UserRole} from '../enums/role';
-import {sendEmailVerification} from '../utils/sendEmail';
+import {
+  sendAccountClosureEmail,
+  sendEmailVerification,
+} from '../utils/sendEmail';
 
 class DogWalkerRepository {
   get db() {
@@ -798,6 +801,66 @@ class DogWalkerRepository {
       return {
         status: 500,
         data: 'Erro interno ao atualizar a imagem de perfil',
+      };
+    }
+  }
+
+  async notifyDogWalkersAboutClosure(): Promise<RepositoryResponse> {
+    try {
+      const dogWalkers = await this.dogWalkersCollection
+        .find({
+          status: {
+            $in: [
+              DogWalkerApplicationStatus.Approved,
+              DogWalkerApplicationStatus.PendingReview,
+              DogWalkerApplicationStatus.PendingTerms,
+            ],
+          },
+        })
+        .toArray();
+
+      if (dogWalkers.length === 0) {
+        return {
+          status: 200,
+          data: 'Nenhum Dog Walker encontrado com os status especificados.',
+        };
+      }
+
+      const emailResults = await Promise.allSettled(
+        dogWalkers.map(async dogWalker => {
+          const email = dogWalker.email;
+          if (email) {
+            return await sendAccountClosureEmail(email);
+          }
+        }),
+      );
+
+      const successfulEmails = emailResults.filter(
+        result =>
+          result.status === 'fulfilled' &&
+          (result as unknown as PromiseFulfilledResult<{status: number}>).value
+            .status === 200,
+      );
+      const failedEmails = emailResults.filter(
+        result =>
+          result.status === 'rejected' ||
+          (result as unknown as PromiseFulfilledResult<{status: number}>).value
+            .status !== 200,
+      );
+
+      return {
+        status: 200,
+        data: {
+          sucess: `${successfulEmails.length} e-mails enviados com sucesso.`,
+          fail: `${failedEmails.length} e-mails falharam.`,
+          failedEmails,
+        },
+      };
+    } catch (error) {
+      console.error('Error notifying Dog Walkers about the end:', error);
+      return {
+        status: 500,
+        data: 'Erro ao notificar Dog Walkers sobre o encerramento',
       };
     }
   }
