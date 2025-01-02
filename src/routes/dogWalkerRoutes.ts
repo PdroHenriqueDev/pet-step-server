@@ -22,6 +22,11 @@ dogWalkerRouter.get(
 dogWalkerRouter.get('/:id', authenticateToken, DogWalker.findById);
 
 dogWalkerRouter.post('/accept-terms', authenticateToken, DogWalker.acceptTerm);
+dogWalkerRouter.post(
+  '/notify-closure',
+  authenticateToken,
+  DogWalker.notifyAboutClosure,
+);
 dogWalkerRouter.post('/add-account', authenticateToken, DogWalker.addAccount);
 dogWalkerRouter.post(
   '/account/document',

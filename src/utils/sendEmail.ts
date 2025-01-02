@@ -202,3 +202,49 @@ export async function sendRejectionEmail({
     };
   }
 }
+
+export async function sendAccountClosureEmail(
+  to: string,
+): Promise<{status: number; data: string}> {
+  const bodyHtml = `
+    <p>Olá,</p>
+    <p>Gostaríamos de informar que estamos encerrando as operações do Pet Step. Agradecemos imensamente por fazer parte da nossa plataforma e pela confiança em nossos serviços.</p>
+    <p>Se você possui valores pendentes a receber, fique tranquilo: todos os pagamentos serão processados dentro dos prazos estabelecidos.</p>
+    <p>Após a liquidação de todos os valores pendentes, sua conta será oficialmente encerrada em nosso sistema. Além disso, todos os seus dados e documentos armazenados em nossa plataforma serão permanentemente excluídos, conforme nossa política de privacidade.</p>
+    <p>Se você tiver dúvidas ou precisar de suporte adicional, entre em contato conosco por meio do nosso e-mail de suporte.</p>
+    <p><em>Por favor, não responda a este e-mail, pois ele foi gerado automaticamente pelo sistema.</em></p>
+  `;
+
+  const params = {
+    Source: 'noreply@petstepapp.com',
+    Destination: {
+      ToAddresses: [to],
+    },
+    Message: {
+      Body: {
+        Html: {
+          Charset: 'UTF-8',
+          Data: bodyHtml,
+        },
+      },
+      Subject: {
+        Charset: 'UTF-8',
+        Data: 'Encerramento das Operações - Pet Step',
+      },
+    },
+  };
+
+  try {
+    await ses.sendEmail(params).promise();
+    return {
+      status: 200,
+      data: 'E-mail de encerramento enviado com sucesso.',
+    };
+  } catch (error) {
+    console.error('Erro ao enviar o e-mail de encerramento:', error);
+    return {
+      status: 500,
+      data: 'Erro ao enviar o e-mail de encerramento.',
+    };
+  }
+}

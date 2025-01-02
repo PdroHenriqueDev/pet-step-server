@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import DogWalkerRepository from '../repositories/dogWalkerRepository';
 import {DogWalkerProps} from '../interfaces/dogWalker';
 import {ApiResponse} from '../interfaces/apitResponse';
+import {UserRole} from '../enums/role';
 
 class DogWalker {
   async store(req: Request, res: Response): Promise<Response<ApiResponse>> {
@@ -334,6 +335,24 @@ class DogWalker {
     }
 
     const response = await DogWalkerRepository.updateProfileImage(userId, file);
+
+    const {status} = response;
+    return res.status(status).send(response);
+  }
+
+  async notifyAboutClosure(
+    req: Request,
+    res: Response,
+  ): Promise<Response<ApiResponse>> {
+    const isAdmin = req.user.role === UserRole.Admin;
+
+    if (!isAdmin) {
+      return res
+        .status(401)
+        .send({status: 401, data: 'Usuário não autorizado.'});
+    }
+
+    const response = await DogWalkerRepository.notifyDogWalkersAboutClosure();
 
     const {status} = response;
     return res.status(status).send(response);
