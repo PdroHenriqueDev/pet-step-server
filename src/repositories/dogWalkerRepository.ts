@@ -318,13 +318,6 @@ class DogWalkerRepository {
         };
       });
 
-      // dogWalkersWithDistance.sort((a, b) => {
-      //   if (a.isOnline === b.isOnline) {
-      //     return parseFloat(a.distance) - parseFloat(b.distance);
-      //   }
-      //   return a.isOnline ? -1 : 1;
-      // });
-
       dogWalkersWithDistance.sort(
         (a, b) => parseFloat(a.distance) - parseFloat(b.distance),
       );

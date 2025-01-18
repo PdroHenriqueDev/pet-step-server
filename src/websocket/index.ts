@@ -10,7 +10,6 @@ export class SocketInit {
     SocketInit.instance = this;
     this.socketIo.on('connection', (socket: Socket) => {
       console.log('User connected');
-      // this.simulateWalk(socket);
 
       const requestId = socket.handshake.query?.request_id ?? '';
       if (requestId) {

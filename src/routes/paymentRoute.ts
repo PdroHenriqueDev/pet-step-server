@@ -24,10 +24,6 @@ router.delete(
   PaymentController.removePayment,
 );
 
-// router.post(
-//   '/upload-document/:accountId',
-//   PaymentController.uploadAccountDocument,
-// );
 router.post('/add-account/:accountId', PaymentController.addExternalAccount);
 
 export default router;
