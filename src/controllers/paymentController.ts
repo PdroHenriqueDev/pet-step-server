@@ -108,29 +108,6 @@ class PaymentController {
     }
   }
 
-  // async uploadAccountDocument(
-  //   req: Request,
-  //   res: Response,
-  // ): Promise<Response<ApiResponse>> {
-  //   const {accountId} = req.params;
-  //   if (!accountId) return res.status(400).send('Requisição inválida');
-  //   try {
-  //     await StripeUtils.uploadDocument(accountId);
-
-  //     const response = {
-  //       status: 200,
-  //       data: 'Documento enviado',
-  //     };
-
-  //     const {status, data} = response;
-
-  //     return res.status(status).send(data);
-  //   } catch (error) {
-  //     console.log('Erro uploading document:', error);
-  //     return res.status(500).send('Error');
-  //   }
-  // }
-
   async accountBalance(
     req: Request,
     res: Response,

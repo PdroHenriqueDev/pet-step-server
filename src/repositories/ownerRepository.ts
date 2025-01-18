@@ -35,30 +35,12 @@ class OwnerRepository {
         };
       }
 
-      // const location = {
-      //   type: 'Point',
-      //   coordinates: [owner.longitude, owner.latitude],
-      // };
-
-      // const customerStripe = await StripeUtils.createStripeCustomer({
-      //   email,
-      //   name,
-      // });
-
-      // const dogsWithId = owner.dogs.map((dog: Dog) => ({
-      //   ...dog,
-      //   _id: new ObjectId(),
-      // }));
-
       const salt = await genSalt();
       const hashedPassword = await hash(password!, salt);
 
       const newOwner = {
         ...owner,
         password: hashedPassword,
-        // stripeAccountId: customerStripe.id,
-        // location,
-        // dogs: dogsWithId,
         rate: 5,
         totalRatings: 0,
         currentWalk: null,

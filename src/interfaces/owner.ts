@@ -15,8 +15,6 @@ export interface Owner {
     city: string;
     state: string;
   };
-  // longitude: number;
-  // latitude: number;
   dogs?: Dog[];
   rate?: number;
   totalRatings?: number;
