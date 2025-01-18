@@ -15,9 +15,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: '*',
-    // origin: process.env.PET_STEP_FRONT,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    // credentials: true,
   }),
 );
 
@@ -38,7 +36,7 @@ new SocketInit(io);
     const mongoConnection = MongoConnection.getInstance();
     await mongoConnection.initialize();
 
-    server.listen(process.env.APP_PORT, () => {
+    server.listen(process.env?.APP_PORT ?? 3000, () => {
       console.log('Server is running 🔥');
     });
   } catch (error) {
