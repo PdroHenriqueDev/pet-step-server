@@ -15,39 +15,41 @@ services:
     networks:
       - mongo-network
 
-  app:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    image: ${DOCKER_USERNAME}/petstep-nodejs-app:latest
-    container_name: petstep-nodejs-app-container
-    ports:
-      - '${APP_PORT}:3000'
-    depends_on:
-      - mongodb
-    environment:
-      APP_PORT: ${APP_PORT}
-      MONGO_HOST: ${MONGO_HOST}
-      MONGO_PORT: ${MONGO_PORT}
-      MONGO_DB_NAME: ${MONGO_DB_NAME}
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-      JWT_SECRET_ACCESS_TOKEN: ${JWT_SECRET_ACCESS_TOKEN}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      AWS_REGION: ${AWS_REGION}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
-      S3_BUCKET_PROFILE: ${S3_BUCKET_PROFILE}
-      PET_STEP_FRONT: ${PET_STEP_FRONT}
-      FIREBASE_REAL_TIME_DATABSE: ${FIREBASE_REAL_TIME_DATABSE}
-      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
-      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
-      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+# JUST IN PRODUCTION 
 
-    networks:
-      - mongo-network
+  # app:
+  #   build: 
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   image: ${DOCKER_USERNAME}/petstep-nodejs-app:latest
+  #   container_name: petstep-nodejs-app-container
+  #   ports:
+  #     - '${APP_PORT}:3000'
+  #   depends_on:
+  #     - mongodb
+  #   environment:
+  #     APP_PORT: ${APP_PORT}
+  #     MONGO_HOST: ${MONGO_HOST}
+  #     MONGO_PORT: ${MONGO_PORT}
+  #     MONGO_DB_NAME: ${MONGO_DB_NAME}
+  #     MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+  #     MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+  #     STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+  #     JWT_SECRET_ACCESS_TOKEN: ${JWT_SECRET_ACCESS_TOKEN}
+  #     JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+  #     AWS_REGION: ${AWS_REGION}
+  #     AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+  #     AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+  #     S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+  #     S3_BUCKET_PROFILE: ${S3_BUCKET_PROFILE}
+  #     PET_STEP_FRONT: ${PET_STEP_FRONT}
+  #     FIREBASE_REAL_TIME_DATABSE: ${FIREBASE_REAL_TIME_DATABSE}
+  #     FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+  #     FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+  #     FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+
+  #   networks:
+  #     - mongo-network
 
   mongo-express:
     image: mongo-express
